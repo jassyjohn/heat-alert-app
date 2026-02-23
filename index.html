@@ -172,7 +172,11 @@ body {
     margin: 4px 0;
     border-radius: 10px;
     font-size: 0.95em;
+    cursor: pointer;
+    transition: outline 0.15s;
 }
+.threshold-row:hover { outline: 2px solid rgba(255,255,255,0.5); }
+.threshold-row.map-active { outline: 3px solid #fff; }
 .threshold-row .cat-name { font-weight: 600; }
 .threshold-row .cat-temp { font-weight: 500; opacity: 0.9; }
 .threshold-row .cat-ci { font-size: 0.75em; opacity: 0.65; font-weight: 400; }
@@ -274,7 +278,7 @@ body {
 </div>
 
 <div id="mapContainer" class="map-container">
-    <h3>Cat 4 Threshold Map — Neighboring ZIPs</h3>
+    <h3 id="mapTitle">Cat 4 Threshold Map — Neighboring ZIPs</h3>
     <div id="map"></div>
     <div class="map-legend">
         <div class="legend-item"><div class="legend-swatch" style="background:#2166ac"></div>&lt;90°F</div>
@@ -501,17 +505,19 @@ function showGauge(currentTemp, t) {
 function showThresholds(t) {
     const container = document.getElementById('thresholdRows');
     const cats = [
-        { num: 1, name: 'Category 1 — Moderate', temp: t.cat1, lo: t.ci_lo1, hi: t.ci_hi1 },
-        { num: 2, name: 'Category 2 — High', temp: t.cat2, lo: t.ci_lo2, hi: t.ci_hi2 },
-        { num: 3, name: 'Category 3 — Very High', temp: t.cat3, lo: t.ci_lo3, hi: t.ci_hi3 },
-        { num: 4, name: 'Category 4 — Extreme', temp: t.cat4, lo: t.ci_lo4, hi: t.ci_hi4 },
+        { num: 1, key: 'cat1', name: 'Category 1 — Moderate', temp: t.cat1, lo: t.ci_lo1, hi: t.ci_hi1 },
+        { num: 2, key: 'cat2', name: 'Category 2 — High', temp: t.cat2, lo: t.ci_lo2, hi: t.ci_hi2 },
+        { num: 3, key: 'cat3', name: 'Category 3 — Very High', temp: t.cat3, lo: t.ci_lo3, hi: t.ci_hi3 },
+        { num: 4, key: 'cat4', name: 'Category 4 — Extreme', temp: t.cat4, lo: t.ci_lo4, hi: t.ci_hi4 },
     ];
 
     container.innerHTML = cats.map(c => {
         const ciText = (c.lo != null && c.hi != null)
             ? `<span class="cat-ci">(${c.lo.toFixed(1)}–${c.hi.toFixed(1)})</span>`
             : '';
-        return `<div class="threshold-row ${catClass(c.num)}">
+        const active = c.key === currentMapCat ? ' map-active' : '';
+        return `<div class="threshold-row ${catClass(c.num)}${active}" data-cat="${c.key}"
+                     onclick="updateMapCategory('${c.key}')">
             <span class="cat-name">${c.name}</span>
             <span class="cat-temp">${c.temp.toFixed(1)}°F ${ciText}</span>
         </div>`;
@@ -525,16 +531,49 @@ let map = null;
 let geoLayer = null;
 let zipPolygons = null;  // cached GeoJSON
 let selectedZip = null;
+let currentMapCat = 'cat4';  // which category colors the map
 
-// Blue-red diverging scale for Cat 4 thresholds
-function thresholdColor(cat4) {
-    if (cat4 == null) return '#999';
-    if (cat4 < 90) return '#2166ac';
-    if (cat4 < 95) return '#67a9cf';
-    if (cat4 < 100) return '#d1e5f0';
-    if (cat4 < 105) return '#fddbc7';
-    if (cat4 < 110) return '#ef8a62';
+const catLabels = {
+    cat1: 'Cat 1 (Moderate)',
+    cat2: 'Cat 2 (High)',
+    cat3: 'Cat 3 (Very High)',
+    cat4: 'Cat 4 (Extreme)',
+};
+
+// Blue-red diverging scale for threshold value
+function thresholdColor(val) {
+    if (val == null) return '#999';
+    if (val < 90) return '#2166ac';
+    if (val < 95) return '#67a9cf';
+    if (val < 100) return '#d1e5f0';
+    if (val < 105) return '#fddbc7';
+    if (val < 110) return '#ef8a62';
     return '#b2182b';
+}
+
+function updateMapCategory(catKey) {
+    currentMapCat = catKey;
+    // Update title
+    document.getElementById('mapTitle').textContent =
+        `${catLabels[catKey]} Threshold Map — Neighboring ZIPs`;
+    // Re-style polygons
+    if (geoLayer) {
+        geoLayer.eachLayer(layer => {
+            const p = layer.feature.properties;
+            const isSelected = p.zip === selectedZip;
+            layer.setStyle({
+                fillColor: thresholdColor(p[catKey]),
+                fillOpacity: isSelected ? 0.9 : 0.6,
+                color: isSelected ? '#fff' : '#333',
+                weight: isSelected ? 3 : 0.5,
+            });
+            if (isSelected) layer.bringToFront();
+        });
+    }
+    // Highlight active row
+    document.querySelectorAll('.threshold-row').forEach(row => {
+        row.classList.toggle('map-active', row.dataset.cat === catKey);
+    });
 }
 
 async function loadPolygons() {
@@ -549,6 +588,8 @@ async function loadPolygons() {
 function showMap(lat, lon, zip, cat) {
     const container = document.getElementById('mapContainer');
     container.style.display = 'block';
+    document.getElementById('mapTitle').textContent =
+        `${catLabels[currentMapCat]} Threshold Map — Neighboring ZIPs`;
 
     if (!map) {
         map = L.map('map', { zoomControl: true, attributionControl: false });
@@ -562,7 +603,7 @@ function showMap(lat, lon, zip, cat) {
     }
 
     selectedZip = zip;
-    map.setView([lat, lon], 11);
+    map.setView([lat, lon], 9);
 
     // Load and render choropleth
     loadPolygons().then(geojson => {
@@ -572,7 +613,7 @@ function showMap(lat, lon, zip, cat) {
             style: function(feature) {
                 const isSelected = feature.properties.zip === zip;
                 return {
-                    fillColor: thresholdColor(feature.properties.cat4),
+                    fillColor: thresholdColor(feature.properties[currentMapCat]),
                     fillOpacity: isSelected ? 0.9 : 0.6,
                     color: isSelected ? '#fff' : '#333',
                     weight: isSelected ? 3 : 0.5,
