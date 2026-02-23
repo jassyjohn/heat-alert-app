@@ -644,7 +644,7 @@ function showMap(lat, lon, zip, cat) {
                     `Cat 2: ${p.cat2}°F<br>` +
                     `Cat 3: ${p.cat3}°F<br>` +
                     `Cat 4: ${p.cat4}°F<br>` +
-                    `<a href="#" onclick="document.getElementById('zipInput').value='${p.zip}';lookupZip();return false;" ` +
+                    `<a href="#" onclick="map.closePopup();document.getElementById('zipInput').value='${p.zip}';setTimeout(lookupZip,100);return false;" ` +
                     `style="color:#313695;font-weight:600;">Look up this ZIP</a>`,
                     { closeButton: true, autoClose: true }
                 );
