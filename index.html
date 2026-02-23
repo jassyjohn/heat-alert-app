@@ -173,6 +173,7 @@ body {
 }
 .threshold-row .cat-name { font-weight: 600; }
 .threshold-row .cat-temp { font-weight: 500; opacity: 0.9; }
+.threshold-row .cat-ci { font-size: 0.75em; opacity: 0.65; font-weight: 400; }
 
 /* Forecast section */
 .forecast {
@@ -444,18 +445,21 @@ function showGauge(currentTemp, t) {
 function showThresholds(t) {
     const container = document.getElementById('thresholdRows');
     const cats = [
-        { num: 1, name: 'Category 1 — Moderate', temp: t.cat1 },
-        { num: 2, name: 'Category 2 — High', temp: t.cat2 },
-        { num: 3, name: 'Category 3 — Very High', temp: t.cat3 },
-        { num: 4, name: 'Category 4 — Extreme', temp: t.cat4 },
+        { num: 1, name: 'Category 1 — Moderate', temp: t.cat1, lo: t.ci_lo1, hi: t.ci_hi1 },
+        { num: 2, name: 'Category 2 — High', temp: t.cat2, lo: t.ci_lo2, hi: t.ci_hi2 },
+        { num: 3, name: 'Category 3 — Very High', temp: t.cat3, lo: t.ci_lo3, hi: t.ci_hi3 },
+        { num: 4, name: 'Category 4 — Extreme', temp: t.cat4, lo: t.ci_lo4, hi: t.ci_hi4 },
     ];
 
-    container.innerHTML = cats.map(c =>
-        `<div class="threshold-row ${catClass(c.num)}">
+    container.innerHTML = cats.map(c => {
+        const ciText = (c.lo != null && c.hi != null)
+            ? `<span class="cat-ci">(${c.lo.toFixed(1)}–${c.hi.toFixed(1)})</span>`
+            : '';
+        return `<div class="threshold-row ${catClass(c.num)}">
             <span class="cat-name">${c.name}</span>
-            <span class="cat-temp">${c.temp.toFixed(1)}°F</span>
-        </div>`
-    ).join('');
+            <span class="cat-temp">${c.temp.toFixed(1)}°F ${ciText}</span>
+        </div>`;
+    }).join('');
 
     document.getElementById('thresholds').style.display = 'block';
 }
