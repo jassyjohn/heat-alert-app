@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CA Heat Alert">
+<title>California Heat Health Alert</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #1a1a2e;
+    color: #eee;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.header {
+    width: 100%;
+    padding: 20px;
+    text-align: center;
+    background: linear-gradient(135deg, #16213e, #0f3460);
+}
+.header h1 { font-size: 1.3em; font-weight: 600; }
+.header p { font-size: 0.8em; color: #aaa; margin-top: 4px; }
+
+.search-box {
+    width: 90%;
+    max-width: 400px;
+    margin: 20px auto;
+    display: flex;
+    gap: 8px;
+}
+.search-box input {
+    flex: 1;
+    padding: 14px 16px;
+    border: 2px solid #333;
+    border-radius: 12px;
+    background: #16213e;
+    color: #fff;
+    font-size: 1.1em;
+    text-align: center;
+    letter-spacing: 2px;
+    outline: none;
+}
+.search-box input:focus { border-color: #e94560; }
+.search-box input::placeholder { color: #666; letter-spacing: normal; }
+.search-box button {
+    padding: 14px 20px;
+    border: none;
+    border-radius: 12px;
+    background: #e94560;
+    color: #fff;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+}
+.search-box button:active { background: #c73651; }
+
+.status-msg {
+    text-align: center;
+    padding: 10px 20px;
+    font-size: 0.9em;
+    color: #aaa;
+}
+.status-msg.error { color: #e94560; }
+
+/* Current conditions card */
+.current-card {
+    width: 90%;
+    max-width: 400px;
+    margin: 10px auto;
+    padding: 24px;
+    border-radius: 16px;
+    text-align: center;
+    display: none;
+}
+.current-card .temp {
+    font-size: 4em;
+    font-weight: 700;
+    line-height: 1;
+}
+.current-card .label {
+    font-size: 1.1em;
+    font-weight: 600;
+    margin-top: 8px;
+}
+.current-card .sublabel {
+    font-size: 0.85em;
+    color: rgba(255,255,255,0.7);
+    margin-top: 4px;
+}
+
+/* Category colors */
+.cat-none { background: linear-gradient(135deg, #2d6a4f, #40916c); }
+.cat-1 { background: linear-gradient(135deg, #b8860b, #daa520); }
+.cat-2 { background: linear-gradient(135deg, #cc5500, #e67300); }
+.cat-3 { background: linear-gradient(135deg, #cc0000, #e63946); }
+.cat-4 { background: linear-gradient(135deg, #800020, #a3001e); }
+
+/* Threshold gauge */
+.gauge {
+    width: 90%;
+    max-width: 400px;
+    margin: 15px auto;
+    display: none;
+}
+.gauge h3 {
+    font-size: 0.9em;
+    color: #aaa;
+    margin-bottom: 10px;
+    text-align: center;
+}
+.gauge-bar {
+    height: 40px;
+    border-radius: 20px;
+    display: flex;
+    overflow: hidden;
+    position: relative;
+    background: #2d6a4f;
+}
+.gauge-segment {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7em;
+    font-weight: 600;
+    color: rgba(255,255,255,0.9);
+    position: relative;
+}
+.seg-none { background: #40916c; }
+.seg-1 { background: #daa520; }
+.seg-2 { background: #e67300; }
+.seg-3 { background: #e63946; }
+.seg-4 { background: #a3001e; }
+
+.gauge-marker {
+    position: absolute;
+    top: -8px;
+    width: 4px;
+    height: 56px;
+    background: #fff;
+    border-radius: 2px;
+    z-index: 10;
+    box-shadow: 0 0 8px rgba(255,255,255,0.8);
+}
+
+/* Threshold table */
+.thresholds {
+    width: 90%;
+    max-width: 400px;
+    margin: 15px auto;
+    display: none;
+}
+.thresholds h3 {
+    font-size: 0.9em;
+    color: #aaa;
+    margin-bottom: 10px;
+    text-align: center;
+}
+.threshold-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    margin: 4px 0;
+    border-radius: 10px;
+    font-size: 0.95em;
+}
+.threshold-row .cat-name { font-weight: 600; }
+.threshold-row .cat-temp { font-weight: 500; opacity: 0.9; }
+
+/* Forecast section */
+.forecast {
+    width: 90%;
+    max-width: 400px;
+    margin: 15px auto 30px;
+    display: none;
+}
+.forecast h3 {
+    font-size: 0.9em;
+    color: #aaa;
+    margin-bottom: 10px;
+    text-align: center;
+}
+.forecast-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 8px;
+}
+.forecast-day {
+    padding: 10px 6px;
+    border-radius: 10px;
+    text-align: center;
+}
+.forecast-day .day-name { font-size: 0.75em; color: rgba(255,255,255,0.7); }
+.forecast-day .day-temp { font-size: 1.3em; font-weight: 700; margin: 4px 0; }
+.forecast-day .day-cat { font-size: 0.7em; font-weight: 600; }
+
+.footer {
+    width: 100%;
+    padding: 20px;
+    text-align: center;
+    font-size: 0.7em;
+    color: #555;
+    margin-top: auto;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+    <h1>California Heat Health Alert</h1>
+    <p>ZIP-level heat thresholds + live weather</p>
+</div>
+
+<div class="search-box">
+    <input type="text" id="zipInput" placeholder="Enter CA ZIP code"
+           maxlength="5" inputmode="numeric" pattern="[0-9]*">
+    <button onclick="lookupZip()">Go</button>
+</div>
+
+<div id="statusMsg" class="status-msg"></div>
+
+<div id="currentCard" class="current-card">
+    <div class="temp" id="currentTemp">--°F</div>
+    <div class="label" id="currentCat">--</div>
+    <div class="sublabel" id="currentDesc">--</div>
+</div>
+
+<div id="gauge" class="gauge">
+    <h3>Your ZIP's Heat Thresholds</h3>
+    <div class="gauge-bar" id="gaugeBar"></div>
+</div>
+
+<div id="thresholds" class="thresholds">
+    <h3>Threshold Details</h3>
+    <div id="thresholdRows"></div>
+</div>
+
+<div id="forecast" class="forecast">
+    <h3>7-Day Forecast</h3>
+    <div class="forecast-grid" id="forecastGrid"></div>
+</div>
+
+<div class="footer">
+    SuperDuper Heat Warning System<br>
+    Weather: National Weather Service API
+</div>
+
+<script>
+// Threshold data will be loaded from external JSON file
+let THRESHOLDS = null;
+
+// Load thresholds from JSON file (same directory)
+async function loadThresholds() {
+    try {
+        const resp = await fetch('zip_thresholds.json');
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        THRESHOLDS = await resp.json();
+        console.log(`Loaded ${Object.keys(THRESHOLDS).length} ZIP thresholds`);
+    } catch (e) {
+        console.error('Failed to load thresholds:', e);
+        showStatus('Failed to load threshold data. Make sure zip_thresholds.json is in the same directory.', true);
+    }
+}
+
+// Load on page load
+loadThresholds();
+
+// Enter key triggers lookup
+document.getElementById('zipInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') lookupZip();
+});
+
+function showStatus(msg, isError) {
+    const el = document.getElementById('statusMsg');
+    el.textContent = msg;
+    el.className = isError ? 'status-msg error' : 'status-msg';
+}
+
+function getCategory(temp, t) {
+    if (temp >= t.cat4) return 4;
+    if (temp >= t.cat3) return 3;
+    if (temp >= t.cat2) return 2;
+    if (temp >= t.cat1) return 1;
+    return 0;
+}
+
+function catName(cat) {
+    return ['Below Threshold', 'Category 1 - Moderate',
+            'Category 2 - High', 'Category 3 - Very High',
+            'Category 4 - Extreme'][cat];
+}
+
+function catClass(cat) {
+    return ['cat-none', 'cat-1', 'cat-2', 'cat-3', 'cat-4'][cat];
+}
+
+async function lookupZip() {
+    const zip = document.getElementById('zipInput').value.trim();
+    if (!/^\d{5}$/.test(zip)) {
+        showStatus('Please enter a valid 5-digit ZIP code', true);
+        return;
+    }
+
+    if (!THRESHOLDS) {
+        showStatus('Threshold data not loaded yet. Please wait...', true);
+        return;
+    }
+
+    const t = THRESHOLDS[zip];
+    if (!t) {
+        showStatus(`ZIP ${zip} not found in California threshold data`, true);
+        return;
+    }
+
+    showStatus('Fetching weather data...', false);
+
+    // Show thresholds immediately
+    showThresholds(t);
+
+    // Fetch weather from NWS
+    try {
+        const weather = await fetchNWSWeather(t.lat, t.lon);
+        showCurrentConditions(weather.current, t, zip);
+        showForecast(weather.forecast, t);
+        showGauge(weather.current.temp, t);
+        showStatus('', false);
+    } catch (e) {
+        console.error('Weather fetch error:', e);
+        showStatus('Weather data unavailable. Showing thresholds only.', true);
+        // Still show thresholds even without weather
+        document.getElementById('currentCard').style.display = 'none';
+        document.getElementById('forecast').style.display = 'none';
+        document.getElementById('gauge').style.display = 'none';
+    }
+}
+
+async function fetchNWSWeather(lat, lon) {
+    // Step 1: Get grid point
+    const pointResp = await fetch(
+        `https://api.weather.gov/points/${lat},${lon}`,
+        { headers: { 'User-Agent': 'CAHeatAlert/1.0 (OEHHA research prototype)' } }
+    );
+    if (!pointResp.ok) throw new Error(`NWS points: ${pointResp.status}`);
+    const pointData = await pointResp.json();
+
+    // Step 2: Get forecast
+    const fcResp = await fetch(
+        pointData.properties.forecast,
+        { headers: { 'User-Agent': 'CAHeatAlert/1.0 (OEHHA research prototype)' } }
+    );
+    if (!fcResp.ok) throw new Error(`NWS forecast: ${fcResp.status}`);
+    const fcData = await fcResp.json();
+
+    // Parse periods — NWS gives day/night pairs
+    const periods = fcData.properties.periods;
+    const forecast = [];
+    let currentTemp = null;
+    let currentDesc = '';
+
+    for (const p of periods) {
+        const tempF = p.temperatureUnit === 'F' ? p.temperature :
+                      p.temperature * 9/5 + 32;
+
+        if (currentTemp === null) {
+            currentTemp = tempF;
+            currentDesc = p.shortForecast;
+        }
+
+        if (p.isDaytime) {
+            forecast.push({
+                name: p.name,
+                temp: tempF,
+                desc: p.shortForecast,
+            });
+        }
+    }
+
+    return {
+        current: { temp: currentTemp, desc: currentDesc },
+        forecast: forecast.slice(0, 7),
+    };
+}
+
+function showCurrentConditions(current, t, zip) {
+    const card = document.getElementById('currentCard');
+    const cat = getCategory(current.temp, t);
+
+    document.getElementById('currentTemp').textContent = `${Math.round(current.temp)}°F`;
+    document.getElementById('currentCat').textContent = catName(cat);
+    document.getElementById('currentDesc').textContent =
+        `ZIP ${zip} — ${current.desc}`;
+
+    card.className = `current-card ${catClass(cat)}`;
+    card.style.display = 'block';
+}
+
+function showGauge(currentTemp, t) {
+    const gauge = document.getElementById('gauge');
+    const bar = document.getElementById('gaugeBar');
+
+    // Gauge range: 70°F to max(cat4+10, currentTemp+5)
+    const lo = 70;
+    const hi = Math.max(t.cat4 + 10, (currentTemp || 0) + 5, 110);
+    const range = hi - lo;
+
+    const pct = (v) => Math.max(0, Math.min(100, (v - lo) / range * 100));
+
+    const segments = [
+        { end: t.cat1, cls: 'seg-none', label: `<${Math.round(t.cat1)}°` },
+        { end: t.cat2, cls: 'seg-1', label: `Cat 1` },
+        { end: t.cat3, cls: 'seg-2', label: `Cat 2` },
+        { end: t.cat4, cls: 'seg-3', label: `Cat 3` },
+        { end: hi, cls: 'seg-4', label: `Cat 4` },
+    ];
+
+    let html = '';
+    let prevEnd = lo;
+    for (const seg of segments) {
+        const w = pct(seg.end) - pct(prevEnd);
+        if (w > 0) {
+            html += `<div class="gauge-segment ${seg.cls}" style="width:${w}%">
+                ${w > 8 ? seg.label : ''}</div>`;
+        }
+        prevEnd = seg.end;
+    }
+
+    // Current temp marker
+    if (currentTemp != null) {
+        const markerPct = pct(currentTemp);
+        html += `<div class="gauge-marker" style="left:${markerPct}%"></div>`;
+    }
+
+    bar.innerHTML = html;
+    gauge.style.display = 'block';
+}
+
+function showThresholds(t) {
+    const container = document.getElementById('thresholdRows');
+    const cats = [
+        { num: 1, name: 'Category 1 — Moderate', temp: t.cat1 },
+        { num: 2, name: 'Category 2 — High', temp: t.cat2 },
+        { num: 3, name: 'Category 3 — Very High', temp: t.cat3 },
+        { num: 4, name: 'Category 4 — Extreme', temp: t.cat4 },
+    ];
+
+    container.innerHTML = cats.map(c =>
+        `<div class="threshold-row ${catClass(c.num)}">
+            <span class="cat-name">${c.name}</span>
+            <span class="cat-temp">${c.temp.toFixed(1)}°F</span>
+        </div>`
+    ).join('');
+
+    document.getElementById('thresholds').style.display = 'block';
+}
+
+function showForecast(forecast, t) {
+    const grid = document.getElementById('forecastGrid');
+    grid.innerHTML = forecast.map(day => {
+        const cat = getCategory(day.temp, t);
+        return `<div class="forecast-day ${catClass(cat)}">
+            <div class="day-name">${day.name}</div>
+            <div class="day-temp">${Math.round(day.temp)}°</div>
+            <div class="day-cat">${cat > 0 ? 'Cat ' + cat : 'OK'}</div>
+        </div>`;
+    }).join('');
+
+    document.getElementById('forecast').style.display = 'block';
+}
+</script>
+
+</body>
+</html>
