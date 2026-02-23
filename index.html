@@ -179,8 +179,8 @@ body {
 
 /* Map */
 .map-container {
-    width: 90%;
-    max-width: 400px;
+    width: 95%;
+    max-width: 600px;
     margin: 15px auto;
     display: none;
 }
@@ -191,9 +191,28 @@ body {
     text-align: center;
 }
 #map {
-    height: 250px;
+    height: 400px;
     border-radius: 12px;
     border: 2px solid #333;
+}
+.map-legend {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+}
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.7em;
+    color: #aaa;
+}
+.legend-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
 }
 
 /* Forecast section */
@@ -255,8 +274,16 @@ body {
 </div>
 
 <div id="mapContainer" class="map-container">
-    <h3>ZIP Location</h3>
+    <h3>Cat 4 Threshold Map — Neighboring ZIPs</h3>
     <div id="map"></div>
+    <div class="map-legend">
+        <div class="legend-item"><div class="legend-swatch" style="background:#2166ac"></div>&lt;90°F</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:#67a9cf"></div>90°</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:#d1e5f0"></div>95°</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:#fddbc7"></div>100°</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:#ef8a62"></div>105°</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:#b2182b"></div>&gt;110°F</div>
+    </div>
 </div>
 
 <div id="gauge" class="gauge">
@@ -495,9 +522,29 @@ function showThresholds(t) {
 
 // ---- Map ----
 let map = null;
-let mapMarker = null;
+let geoLayer = null;
+let zipPolygons = null;  // cached GeoJSON
+let selectedZip = null;
 
-const catColors = ['#40916c', '#daa520', '#e67300', '#e63946', '#a3001e'];
+// Blue-red diverging scale for Cat 4 thresholds
+function thresholdColor(cat4) {
+    if (cat4 == null) return '#999';
+    if (cat4 < 90) return '#2166ac';
+    if (cat4 < 95) return '#67a9cf';
+    if (cat4 < 100) return '#d1e5f0';
+    if (cat4 < 105) return '#fddbc7';
+    if (cat4 < 110) return '#ef8a62';
+    return '#b2182b';
+}
+
+async function loadPolygons() {
+    if (zipPolygons) return zipPolygons;
+    const resp = await fetch('zip_polygons.geojson');
+    if (!resp.ok) throw new Error(`GeoJSON: ${resp.status}`);
+    zipPolygons = await resp.json();
+    console.log(`Loaded ${zipPolygons.features.length} ZIP polygons`);
+    return zipPolygons;
+}
 
 function showMap(lat, lon, zip, cat) {
     const container = document.getElementById('mapContainer');
@@ -507,35 +554,60 @@ function showMap(lat, lon, zip, cat) {
         map = L.map('map', { zoomControl: true, attributionControl: false });
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 18,
+            opacity: 0.4,
         }).addTo(map);
         L.control.attribution({ prefix: false })
             .addAttribution('&copy; OpenStreetMap')
             .addTo(map);
     }
 
-    map.setView([lat, lon], 12);
+    selectedZip = zip;
+    map.setView([lat, lon], 11);
 
-    if (mapMarker) map.removeLayer(mapMarker);
+    // Load and render choropleth
+    loadPolygons().then(geojson => {
+        if (geoLayer) map.removeLayer(geoLayer);
 
-    const color = catColors[cat];
-    const icon = L.divIcon({
-        className: '',
-        html: `<div style="
-            width: 28px; height: 28px; border-radius: 50%;
-            background: ${color}; border: 3px solid #fff;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
-        "></div>`,
-        iconSize: [28, 28],
-        iconAnchor: [14, 14],
+        geoLayer = L.geoJSON(geojson, {
+            style: function(feature) {
+                const isSelected = feature.properties.zip === zip;
+                return {
+                    fillColor: thresholdColor(feature.properties.cat4),
+                    fillOpacity: isSelected ? 0.9 : 0.6,
+                    color: isSelected ? '#fff' : '#333',
+                    weight: isSelected ? 3 : 0.5,
+                };
+            },
+            onEachFeature: function(feature, layer) {
+                const p = feature.properties;
+                const isSelected = p.zip === zip;
+                layer.bindTooltip(
+                    `<b>ZIP ${p.zip}</b>${isSelected ? ' (selected)' : ''}<br>` +
+                    `Cat 1: ${p.cat1}°F<br>` +
+                    `Cat 2: ${p.cat2}°F<br>` +
+                    `Cat 3: ${p.cat3}°F<br>` +
+                    `Cat 4: ${p.cat4}°F`,
+                    { sticky: true }
+                );
+                // Click a neighboring ZIP to look it up
+                layer.on('click', function() {
+                    document.getElementById('zipInput').value = p.zip;
+                    lookupZip();
+                });
+            },
+        }).addTo(map);
+
+        // Bring selected ZIP to front
+        geoLayer.eachLayer(layer => {
+            if (layer.feature.properties.zip === zip) {
+                layer.bringToFront();
+            }
+        });
+
+        setTimeout(() => map.invalidateSize(), 100);
+    }).catch(err => {
+        console.error('Failed to load polygons:', err);
     });
-
-    mapMarker = L.marker([lat, lon], { icon: icon })
-        .addTo(map)
-        .bindPopup(`<b>ZIP ${zip}</b><br>${catName(cat)}`)
-        .openPopup();
-
-    // Fix Leaflet rendering glitch when container was hidden
-    setTimeout(() => map.invalidateSize(), 100);
 }
 
 function showForecast(forecast, t) {
