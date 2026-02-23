@@ -281,12 +281,12 @@ body {
     <h3 id="mapTitle">Cat 4 Threshold Map — Neighboring ZIPs</h3>
     <div id="map"></div>
     <div class="map-legend">
-        <div class="legend-item"><div class="legend-swatch" style="background:#2166ac"></div>&lt;90°F</div>
-        <div class="legend-item"><div class="legend-swatch" style="background:#67a9cf"></div>90°</div>
-        <div class="legend-item"><div class="legend-swatch" style="background:#d1e5f0"></div>95°</div>
-        <div class="legend-item"><div class="legend-swatch" style="background:#fddbc7"></div>100°</div>
-        <div class="legend-item"><div class="legend-swatch" style="background:#ef8a62"></div>105°</div>
-        <div class="legend-item"><div class="legend-swatch" style="background:#b2182b"></div>&gt;110°F</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:#2166ac"></div>81°F</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:#5aada8"></div>86°</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:#a0d468"></div>91°</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:#f0d644"></div>96°</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:#e8701a"></div>101°</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:#8b0000"></div>&gt;103°F</div>
     </div>
 </div>
 
@@ -540,15 +540,20 @@ const catLabels = {
     cat4: 'Cat 4 (Extreme)',
 };
 
-// Blue-red diverging scale for threshold value
+// Color scale matching ZIP threshold maps (blue→green→yellow→red)
 function thresholdColor(val) {
     if (val == null) return '#999';
-    if (val < 90) return '#2166ac';
-    if (val < 95) return '#67a9cf';
-    if (val < 100) return '#d1e5f0';
-    if (val < 105) return '#fddbc7';
-    if (val < 110) return '#ef8a62';
-    return '#b2182b';
+    if (val < 81) return '#2166ac';
+    if (val < 84) return '#3a89c1';
+    if (val < 86) return '#5aada8';
+    if (val < 89) return '#6abf8a';
+    if (val < 91) return '#a0d468';
+    if (val < 93) return '#d4e34a';
+    if (val < 96) return '#f0d644';
+    if (val < 98) return '#f5a623';
+    if (val < 101) return '#e8701a';
+    if (val < 103) return '#d43d1a';
+    return '#8b0000';
 }
 
 function updateMapCategory(catKey) {
