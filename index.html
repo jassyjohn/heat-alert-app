@@ -11,6 +11,25 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
+/* Password gate */
+.pw-gate {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: #1a1a2e; z-index: 9999;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.pw-gate h2 { color: #eee; margin-bottom: 16px; font-size: 1.2em; }
+.pw-gate input {
+    padding: 12px 16px; border: 2px solid #333; border-radius: 10px;
+    background: #16213e; color: #fff; font-size: 1em; text-align: center;
+    outline: none; width: 220px;
+}
+.pw-gate input:focus { border-color: #e94560; }
+.pw-gate button {
+    margin-top: 10px; padding: 10px 28px; border: none; border-radius: 10px;
+    background: #e94560; color: #fff; font-size: 1em; font-weight: 600; cursor: pointer;
+}
+.pw-gate .pw-error { color: #e94560; font-size: 0.85em; margin-top: 8px; min-height: 1.2em; }
+.app-content { display: none; }
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: #1a1a2e;
@@ -258,6 +277,14 @@ body {
 </head>
 <body>
 
+<div id="pwGate" class="pw-gate">
+    <h2>California Heat Health Alert</h2>
+    <input type="password" id="pwInput" placeholder="Enter password" autofocus>
+    <button onclick="checkPassword()">Enter</button>
+    <div class="pw-error" id="pwError"></div>
+</div>
+
+<div id="appContent" class="app-content">
 <div class="header">
     <h1>California Heat Health Alert</h1>
     <p>ZIP-level heat thresholds + live weather</p>
@@ -302,6 +329,44 @@ body {
     SuperDuper Heat Warning System<br>
     Weather: National Weather Service API
 </div>
+</div><!-- end app-content -->
+
+<script>
+// ---- Password gate ----
+// SHA-256 hash of the password (not stored in plain text)
+const PW_HASH = 'fda024085d4d0bd1fe98e21cf28259e9aafada9d339f72a5ea45f983f08d5ffd';
+
+async function sha256(str) {
+    const buf = await crypto.subtle.digest('SHA-256',
+        new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function checkPassword() {
+    const input = document.getElementById('pwInput').value;
+    const hash = await sha256(input);
+    if (hash === PW_HASH) {
+        document.getElementById('pwGate').style.display = 'none';
+        document.getElementById('appContent').style.display = 'block';
+        sessionStorage.setItem('pw_ok', '1');
+    } else {
+        document.getElementById('pwError').textContent = 'Incorrect password';
+        document.getElementById('pwInput').value = '';
+        document.getElementById('pwInput').focus();
+    }
+}
+
+// Allow Enter key on password field
+document.getElementById('pwInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') checkPassword();
+});
+
+// Remember within session
+if (sessionStorage.getItem('pw_ok') === '1') {
+    document.getElementById('pwGate').style.display = 'none';
+    document.getElementById('appContent').style.display = 'block';
+}
+</script>
 
 <script>
 // Threshold data will be loaded from external JSON file
