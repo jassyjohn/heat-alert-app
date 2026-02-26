@@ -378,7 +378,17 @@ async function loadThresholds() {
         const resp = await fetch('zip_thresholds.json');
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         THRESHOLDS = await resp.json();
-        console.log(`Loaded ${Object.keys(THRESHOLDS).length} ZIP thresholds`);
+        // Detect number of categories from first ZIP entry
+        const firstZip = Object.values(THRESHOLDS)[0];
+        if (firstZip && firstZip.n_cats) {
+            N_CATS = firstZip.n_cats;
+        } else {
+            // Count cat1, cat2, cat3, ... keys
+            N_CATS = 0;
+            while (firstZip[`cat${N_CATS + 1}`] != null) N_CATS++;
+        }
+        currentMapCat = `cat${N_CATS}`;
+        console.log(`Loaded ${Object.keys(THRESHOLDS).length} ZIP thresholds (${N_CATS} categories)`);
     } catch (e) {
         console.error('Failed to load thresholds:', e);
         showStatus('Failed to load threshold data. Make sure zip_thresholds.json is in the same directory.', true);
@@ -399,22 +409,25 @@ function showStatus(msg, isError) {
     el.className = isError ? 'status-msg error' : 'status-msg';
 }
 
+// Number of threshold categories (read from data, default 3)
+let N_CATS = 3;
+
 function getCategory(temp, t) {
-    if (temp >= t.cat4) return 4;
-    if (temp >= t.cat3) return 3;
-    if (temp >= t.cat2) return 2;
-    if (temp >= t.cat1) return 1;
+    for (let c = N_CATS; c >= 1; c--) {
+        if (temp >= t[`cat${c}`]) return c;
+    }
     return 0;
 }
 
+const CAT_NAMES = ['Below Threshold', 'Category 1 - Moderate',
+        'Category 2 - High', 'Category 3 - Extreme'];
+
 function catName(cat) {
-    return ['Below Threshold', 'Category 1 - Moderate',
-            'Category 2 - High', 'Category 3 - Very High',
-            'Category 4 - Extreme'][cat];
+    return CAT_NAMES[cat] || `Category ${cat}`;
 }
 
 function catClass(cat) {
-    return ['cat-none', 'cat-1', 'cat-2', 'cat-3', 'cat-4'][cat];
+    return cat === 0 ? 'cat-none' : `cat-${cat}`;
 }
 
 async function lookupZip() {
@@ -524,20 +537,22 @@ function showGauge(currentTemp, t) {
     const gauge = document.getElementById('gauge');
     const bar = document.getElementById('gaugeBar');
 
-    // Gauge range: 70°F to max(cat4+10, currentTemp+5)
+    // Gauge range: 70°F to max(top_cat+10, currentTemp+5)
     const lo = 70;
-    const hi = Math.max(t.cat4 + 10, (currentTemp || 0) + 5, 110);
+    const topCatTemp = t[`cat${N_CATS}`];
+    const hi = Math.max(topCatTemp + 10, (currentTemp || 0) + 5, 110);
     const range = hi - lo;
 
     const pct = (v) => Math.max(0, Math.min(100, (v - lo) / range * 100));
 
+    // Build segments dynamically
     const segments = [
         { end: t.cat1, cls: 'seg-none', label: `<${Math.round(t.cat1)}°` },
-        { end: t.cat2, cls: 'seg-1', label: `Cat 1` },
-        { end: t.cat3, cls: 'seg-2', label: `Cat 2` },
-        { end: t.cat4, cls: 'seg-3', label: `Cat 3` },
-        { end: hi, cls: 'seg-4', label: `Cat 4` },
     ];
+    for (let c = 1; c < N_CATS; c++) {
+        segments.push({ end: t[`cat${c+1}`], cls: `seg-${c}`, label: `Cat ${c}` });
+    }
+    segments.push({ end: hi, cls: `seg-${N_CATS}`, label: `Cat ${N_CATS}` });
 
     let html = '';
     let prevEnd = lo;
@@ -562,12 +577,13 @@ function showGauge(currentTemp, t) {
 
 function showThresholds(t) {
     const container = document.getElementById('thresholdRows');
-    const cats = [
-        { num: 1, key: 'cat1', name: 'Category 1 — Moderate', temp: t.cat1, lo: t.ci_lo1, hi: t.ci_hi1 },
-        { num: 2, key: 'cat2', name: 'Category 2 — High', temp: t.cat2, lo: t.ci_lo2, hi: t.ci_hi2 },
-        { num: 3, key: 'cat3', name: 'Category 3 — Very High', temp: t.cat3, lo: t.ci_lo3, hi: t.ci_hi3 },
-        { num: 4, key: 'cat4', name: 'Category 4 — Extreme', temp: t.cat4, lo: t.ci_lo4, hi: t.ci_hi4 },
-    ];
+    const cats = [];
+    for (let c = 1; c <= N_CATS; c++) {
+        cats.push({
+            num: c, key: `cat${c}`, name: catName(c),
+            temp: t[`cat${c}`], lo: t[`ci_lo${c}`], hi: t[`ci_hi${c}`],
+        });
+    }
 
     container.innerHTML = cats.map(c => {
         const ciText = (c.lo != null && c.hi != null)
@@ -589,26 +605,23 @@ let map = null;
 let geoLayer = null;
 let zipPolygons = null;  // cached GeoJSON
 let selectedZip = null;
-let currentMapCat = 'cat4';  // which category colors the map
+let currentMapCat = `cat${N_CATS}`;  // default to highest category
 
-const catLabels = {
-    cat1: 'Cat 1 (Moderate)',
-    cat2: 'Cat 2 (High)',
-    cat3: 'Cat 3 (Very High)',
-    cat4: 'Cat 4 (Extreme)',
-};
+function getCatLabel(catKey) {
+    const n = parseInt(catKey.replace('cat', ''));
+    return catName(n);
+}
 
-// RdYlBu_r color scale matching ZIP threshold maps (blue→cream→red)
+// RdYlBu_r color scale matching ZIP threshold maps (blue->cream->red)
 // 11 stops sampled from chroma.scale(['#313695','#74add1','#ffffbf','#f46d43','#a50026'])
 const rdYlBuR = ['#313695','#4575b4','#74add1','#abd9e9','#e0f3f8',
                  '#ffffbf','#fee090','#fdae61','#f46d43','#d73027','#a50026'];
 
-// Per-category breakpoints based on actual data ranges
+// Per-category breakpoints (will be recomputed from data once loaded)
 const colorScales = {
-    cat1: { breaks: [80, 81.5, 83, 84, 85, 86, 87, 88, 89.5, 91, 93] },
-    cat2: { breaks: [80, 82, 84, 86, 88, 90, 92, 94, 97, 99, 101] },
-    cat3: { breaks: [80, 83, 85, 88, 90, 93, 95, 98, 101, 104, 107] },
-    cat4: { breaks: [81, 84, 88, 91, 94, 97, 101, 105, 109, 113, 119] },
+    cat1: { breaks: [71, 74, 77, 80, 83, 86, 89, 92, 95, 98, 100] },
+    cat2: { breaks: [72, 75, 78, 81, 85, 88, 91, 94, 97, 100, 103] },
+    cat3: { breaks: [73, 77, 80, 84, 88, 92, 96, 100, 104, 108, 111] },
 };
 
 function thresholdColor(val) {
@@ -634,7 +647,7 @@ function updateMapCategory(catKey) {
     currentMapCat = catKey;
     // Update title and legend
     document.getElementById('mapTitle').textContent =
-        `${catLabels[catKey]} Threshold Map — Neighboring ZIPs`;
+        `${getCatLabel(catKey)} Threshold Map — Neighboring ZIPs`;
     updateLegend();
     // Re-style polygons
     if (geoLayer) {
@@ -669,7 +682,7 @@ function showMap(lat, lon, zip, cat) {
     const container = document.getElementById('mapContainer');
     container.style.display = 'block';
     document.getElementById('mapTitle').textContent =
-        `${catLabels[currentMapCat]} Threshold Map — Neighboring ZIPs`;
+        `${getCatLabel(currentMapCat)} Threshold Map — Neighboring ZIPs`;
     updateLegend();
 
     if (!map) {
@@ -703,14 +716,11 @@ function showMap(lat, lon, zip, cat) {
             onEachFeature: function(feature, layer) {
                 const p = feature.properties;
                 const isSelected = p.zip === zip;
-                layer.bindPopup(
-                    `<b>ZIP ${p.zip}</b>${isSelected ? ' (selected)' : ''}<br>` +
-                    `Cat 1: ${p.cat1}°F<br>` +
-                    `Cat 2: ${p.cat2}°F<br>` +
-                    `Cat 3: ${p.cat3}°F<br>` +
-                    `Cat 4: ${p.cat4}°F`,
-                    { closeButton: true, autoClose: true }
-                );
+                let popupLines = `<b>ZIP ${p.zip}</b>${isSelected ? ' (selected)' : ''}`;
+                for (let c = 1; c <= N_CATS; c++) {
+                    if (p[`cat${c}`] != null) popupLines += `<br>Cat ${c}: ${p[`cat${c}`]}°F`;
+                }
+                layer.bindPopup(popupLines, { closeButton: true, autoClose: true });
             },
         }).addTo(map);
 
