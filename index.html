@@ -11,6 +11,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
+
 /* Password gate */
 .pw-gate {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -30,6 +31,7 @@
 }
 .pw-gate .pw-error { color: #e94560; font-size: 0.85em; margin-top: 8px; min-height: 1.2em; }
 .app-content { display: none; }
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: #1a1a2e;
@@ -40,238 +42,121 @@ body {
     align-items: center;
 }
 .header {
-    width: 100%;
-    padding: 20px;
-    text-align: center;
+    width: 100%; padding: 20px; text-align: center;
     background: linear-gradient(135deg, #16213e, #0f3460);
 }
 .header h1 { font-size: 1.3em; font-weight: 600; }
 .header p { font-size: 0.8em; color: #aaa; margin-top: 4px; }
 
 .search-box {
-    width: 90%;
-    max-width: 400px;
-    margin: 20px auto;
-    display: flex;
-    gap: 8px;
+    width: 90%; max-width: 400px; margin: 20px auto; display: flex; gap: 8px;
 }
 .search-box input {
-    flex: 1;
-    padding: 14px 16px;
-    border: 2px solid #333;
-    border-radius: 12px;
-    background: #16213e;
-    color: #fff;
-    font-size: 1.1em;
-    text-align: center;
-    letter-spacing: 2px;
-    outline: none;
+    flex: 1; padding: 14px 16px; border: 2px solid #333; border-radius: 12px;
+    background: #16213e; color: #fff; font-size: 1.1em; text-align: center;
+    letter-spacing: 2px; outline: none;
 }
 .search-box input:focus { border-color: #e94560; }
 .search-box input::placeholder { color: #666; letter-spacing: normal; }
 .search-box button {
-    padding: 14px 20px;
-    border: none;
-    border-radius: 12px;
-    background: #e94560;
-    color: #fff;
-    font-size: 1em;
-    font-weight: 600;
-    cursor: pointer;
+    padding: 14px 20px; border: none; border-radius: 12px;
+    background: #e94560; color: #fff; font-size: 1em; font-weight: 600; cursor: pointer;
 }
 .search-box button:active { background: #c73651; }
 
-.status-msg {
-    text-align: center;
-    padding: 10px 20px;
-    font-size: 0.9em;
-    color: #aaa;
-}
+.status-msg { text-align: center; padding: 10px 20px; font-size: 0.9em; color: #aaa; }
 .status-msg.error { color: #e94560; }
 
 /* Current conditions card */
 .current-card {
-    width: 90%;
-    max-width: 400px;
-    margin: 10px auto;
-    padding: 24px;
-    border-radius: 16px;
-    text-align: center;
-    display: none;
+    width: 90%; max-width: 400px; margin: 10px auto; padding: 24px;
+    border-radius: 16px; text-align: center; display: none;
 }
-.current-card .temp {
-    font-size: 4em;
-    font-weight: 700;
-    line-height: 1;
-}
-.current-card .label {
-    font-size: 1.1em;
-    font-weight: 600;
-    margin-top: 8px;
-}
-.current-card .sublabel {
-    font-size: 0.85em;
-    color: rgba(255,255,255,0.7);
-    margin-top: 4px;
-}
+.current-card .temp { font-size: 4em; font-weight: 700; line-height: 1; }
+.current-card .label { font-size: 1.1em; font-weight: 600; margin-top: 8px; }
+.current-card .sublabel { font-size: 0.85em; color: rgba(255,255,255,0.7); margin-top: 4px; }
 
-/* Category colors */
+/* Category gradient classes */
 .cat-none { background: linear-gradient(135deg, #2d6a4f, #40916c); }
 .cat-1 { background: linear-gradient(135deg, #b8860b, #daa520); }
 .cat-2 { background: linear-gradient(135deg, #cc5500, #e67300); }
 .cat-3 { background: linear-gradient(135deg, #cc0000, #e63946); }
 .cat-4 { background: linear-gradient(135deg, #800020, #a3001e); }
 
-/* Threshold gauge */
-.gauge {
-    width: 90%;
-    max-width: 400px;
-    margin: 15px auto;
-    display: none;
+/* Speedometer gauge */
+.gauge-section {
+    width: 90%; max-width: 400px; margin: 15px auto; text-align: center; display: none;
 }
-.gauge h3 {
-    font-size: 0.9em;
-    color: #aaa;
-    margin-bottom: 10px;
-    text-align: center;
-}
-.gauge-bar {
-    height: 40px;
-    border-radius: 20px;
-    display: flex;
-    overflow: hidden;
-    position: relative;
-    background: #2d6a4f;
-}
-.gauge-segment {
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.7em;
-    font-weight: 600;
-    color: rgba(255,255,255,0.9);
-    position: relative;
-}
-.seg-none { background: #40916c; }
-.seg-1 { background: #daa520; }
-.seg-2 { background: #e67300; }
-.seg-3 { background: #e63946; }
-.seg-4 { background: #a3001e; }
+.gauge-section h3 { font-size: 0.9em; color: #aaa; margin-bottom: 10px; }
+.gauge-svg-container { display: flex; justify-content: center; }
+.gauge-readout { text-align: center; margin-top: 4px; }
+.gauge-readout .temp { font-size: 2.2em; font-weight: 700; color: #fff; }
+.gauge-readout .cat-label { font-size: 0.85em; font-weight: 500; margin-top: 2px; }
 
-.gauge-marker {
-    position: absolute;
-    top: -8px;
-    width: 4px;
-    height: 56px;
-    background: #fff;
-    border-radius: 2px;
-    z-index: 10;
-    box-shadow: 0 0 8px rgba(255,255,255,0.8);
+/* Neighbor gauges */
+.neighbor-section {
+    width: 90%; max-width: 400px; margin: 10px auto; display: none;
 }
+.neighbor-section h3 { font-size: 0.9em; color: #aaa; margin-bottom: 10px; text-align: center; }
+.neighbor-row { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+.mini-gauge { text-align: center; }
+.mini-gauge .zip-label { font-size: 0.75em; font-weight: 600; color: rgba(255,255,255,0.8); font-family: monospace; margin-top: 4px; }
+.mini-gauge .cat-label { font-size: 0.7em; font-weight: 500; margin-top: 2px; }
 
-/* Threshold table */
+/* Threshold rows */
 .thresholds {
-    width: 90%;
-    max-width: 400px;
-    margin: 15px auto;
-    display: none;
+    width: 90%; max-width: 400px; margin: 15px auto; display: none;
 }
-.thresholds h3 {
-    font-size: 0.9em;
-    color: #aaa;
-    margin-bottom: 10px;
-    text-align: center;
-}
+.thresholds h3 { font-size: 0.9em; color: #aaa; margin-bottom: 10px; text-align: center; }
 .threshold-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 16px;
-    margin: 4px 0;
-    border-radius: 10px;
-    font-size: 0.95em;
-    cursor: pointer;
-    transition: outline 0.15s;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 16px; margin: 4px 0; border-radius: 10px;
+    font-size: 0.95em; cursor: pointer; transition: all 0.15s;
 }
 .threshold-row:hover { outline: 2px solid rgba(255,255,255,0.5); }
-.threshold-row.map-active { outline: 3px solid #fff; }
+.threshold-row.map-active { outline: 3px solid #fff; transform: scale(1.02); }
 .threshold-row .cat-name { font-weight: 600; }
+.threshold-row .map-pin { margin-right: 6px; font-size: 0.85em; }
 .threshold-row .cat-temp { font-weight: 500; opacity: 0.9; }
 .threshold-row .cat-ci { font-size: 0.75em; opacity: 0.65; font-weight: 400; }
 
-/* Map */
-.map-container {
-    width: 95%;
-    max-width: 600px;
-    margin: 15px auto;
-    display: none;
-}
-.map-container h3 {
-    font-size: 0.9em;
-    color: #aaa;
-    margin-bottom: 10px;
-    text-align: center;
-}
-#map {
-    height: 400px;
-    border-radius: 12px;
-    border: 2px solid #333;
-}
-.map-legend {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    margin-top: 8px;
-    flex-wrap: wrap;
-}
-.legend-item {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 0.7em;
-    color: #aaa;
-}
-.legend-swatch {
-    width: 14px;
-    height: 14px;
-    border-radius: 3px;
-}
-
-/* Forecast section */
+/* Forecast */
 .forecast {
-    width: 90%;
-    max-width: 400px;
-    margin: 15px auto 30px;
-    display: none;
+    width: 90%; max-width: 400px; margin: 15px auto 10px; display: none;
 }
-.forecast h3 {
-    font-size: 0.9em;
-    color: #aaa;
-    margin-bottom: 10px;
-    text-align: center;
-}
+.forecast h3 { font-size: 0.9em; color: #aaa; margin-bottom: 10px; text-align: center; }
 .forecast-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-    gap: 8px;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px;
 }
-.forecast-day {
-    padding: 10px 6px;
-    border-radius: 10px;
-    text-align: center;
-}
+.forecast-day { padding: 10px 6px; border-radius: 10px; text-align: center; }
 .forecast-day .day-name { font-size: 0.75em; color: rgba(255,255,255,0.7); }
 .forecast-day .day-temp { font-size: 1.3em; font-weight: 700; margin: 4px 0; }
 .forecast-day .day-cat { font-size: 0.7em; font-weight: 600; }
 
+/* Map */
+.map-container {
+    width: 95%; max-width: 600px; margin: 15px auto; display: none;
+}
+.map-container h3 { font-size: 0.9em; color: #aaa; margin-bottom: 10px; text-align: center; }
+.map-wrapper { position: relative; }
+#map { height: 400px; border-radius: 12px; border: 2px solid #333; }
+.rezoom-btn {
+    position: absolute; top: 10px; right: 10px; z-index: 1000;
+    width: 36px; height: 36px; border: none; border-radius: 8px;
+    background: rgba(255,255,255,0.85); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+.rezoom-btn:hover { background: #fff; }
+.map-legend {
+    display: flex; justify-content: center; gap: 8px; margin-top: 8px; flex-wrap: wrap;
+}
+.legend-item { display: flex; align-items: center; gap: 4px; font-size: 0.7em; color: #aaa; }
+.legend-swatch { width: 14px; height: 14px; border-radius: 3px; }
+
 .footer {
-    width: 100%;
-    padding: 20px;
-    text-align: center;
-    font-size: 0.7em;
-    color: #555;
-    margin-top: auto;
+    width: 100%; padding: 20px; text-align: center;
+    font-size: 0.7em; color: #555; margin-top: auto;
 }
 </style>
 </head>
@@ -304,41 +189,53 @@ body {
     <div class="sublabel" id="currentDesc">--</div>
 </div>
 
-<div id="mapContainer" class="map-container">
-    <h3 id="mapTitle">Cat 4 Threshold Map — Neighboring ZIPs</h3>
-    <div id="map"></div>
-    <div class="map-legend" id="mapLegend"></div>
-</div>
-
-<div id="gauge" class="gauge">
+<!-- Speedometer gauge -->
+<div id="gaugeSection" class="gauge-section">
     <h3>Your ZIP's Heat Thresholds</h3>
-    <div class="gauge-bar" id="gaugeBar"></div>
+    <div class="gauge-svg-container" id="gaugeSvg"></div>
+    <div class="gauge-readout" id="gaugeReadout"></div>
 </div>
 
+<!-- Neighbor mini gauges -->
+<div id="neighborSection" class="neighbor-section">
+    <h3>Nearby ZIPs</h3>
+    <div class="neighbor-row" id="neighborRow"></div>
+</div>
+
+<!-- Threshold details -->
 <div id="thresholds" class="thresholds">
-    <h3>Threshold Details</h3>
+    <h3>Threshold Details &mdash; tap to view on map</h3>
     <div id="thresholdRows"></div>
 </div>
 
+<!-- Forecast -->
 <div id="forecast" class="forecast">
     <h3>7-Day Forecast</h3>
     <div class="forecast-grid" id="forecastGrid"></div>
 </div>
 
+<!-- Map (at the bottom) -->
+<div id="mapContainer" class="map-container">
+    <h3 id="mapTitle">Threshold Map</h3>
+    <div class="map-wrapper">
+        <button class="rezoom-btn" onclick="rezoomMap()" title="Re-center map">&#8982;</button>
+        <div id="map"></div>
+    </div>
+    <div class="map-legend" id="mapLegend"></div>
+</div>
+
 <div class="footer">
-    SuperDuper Heat Warning System<br>
+    California Heat Health Alert System<br>
     Weather: National Weather Service API
 </div>
-</div><!-- end app-content -->
+</div>
 
 <script>
 // ---- Password gate ----
-// SHA-256 hash of the password (not stored in plain text)
 const PW_HASH = 'fda024085d4d0bd1fe98e21cf28259e9aafada9d339f72a5ea45f983f08d5ffd';
 
 async function sha256(str) {
-    const buf = await crypto.subtle.digest('SHA-256',
-        new TextEncoder().encode(str));
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
     return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
@@ -349,6 +246,7 @@ async function checkPassword() {
         document.getElementById('pwGate').style.display = 'none';
         document.getElementById('appContent').style.display = 'block';
         sessionStorage.setItem('pw_ok', '1');
+        autoStart();
     } else {
         document.getElementById('pwError').textContent = 'Incorrect password';
         document.getElementById('pwInput').value = '';
@@ -356,12 +254,10 @@ async function checkPassword() {
     }
 }
 
-// Allow Enter key on password field
 document.getElementById('pwInput').addEventListener('keypress', (e) => {
     if (e.key === 'Enter') checkPassword();
 });
 
-// Remember within session
 if (sessionStorage.getItem('pw_ok') === '1') {
     document.getElementById('pwGate').style.display = 'none';
     document.getElementById('appContent').style.display = 'block';
@@ -369,48 +265,33 @@ if (sessionStorage.getItem('pw_ok') === '1') {
 </script>
 
 <script>
-// Threshold data will be loaded from external JSON file
+// ---- Global state ----
 let THRESHOLDS = null;
+let N_CATS = 4;
+let currentMapCat = 'cat4';
+let map = null;
+let geoLayer = null;
+let zipPolygons = null;
+let selectedZip = null;
+let neighborZipList = [];
+let mapCenter = null;
+const DEFAULT_ZIP = '90095';  // UCLA
 
-// Load thresholds from JSON file (same directory)
-async function loadThresholds() {
-    try {
-        const resp = await fetch('zip_thresholds.json');
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        THRESHOLDS = await resp.json();
-        // Detect number of categories from first ZIP entry
-        const firstZip = Object.values(THRESHOLDS)[0];
-        if (firstZip && firstZip.n_cats) {
-            N_CATS = firstZip.n_cats;
-        } else {
-            // Count cat1, cat2, cat3, ... keys
-            N_CATS = 0;
-            while (firstZip[`cat${N_CATS + 1}`] != null) N_CATS++;
-        }
-        currentMapCat = `cat${N_CATS}`;
-        console.log(`Loaded ${Object.keys(THRESHOLDS).length} ZIP thresholds (${N_CATS} categories)`);
-    } catch (e) {
-        console.error('Failed to load thresholds:', e);
-        showStatus('Failed to load threshold data. Make sure zip_thresholds.json is in the same directory.', true);
-    }
-}
+const CAT_COLORS = {
+    none: { fill: '#40916c', gradient: ['#2d6a4f', '#40916c'] },
+    1:    { fill: '#daa520', gradient: ['#b8860b', '#daa520'] },
+    2:    { fill: '#e67300', gradient: ['#cc5500', '#e67300'] },
+    3:    { fill: '#e63946', gradient: ['#cc0000', '#e63946'] },
+    4:    { fill: '#a3001e', gradient: ['#800020', '#a3001e'] },
+};
 
-// Load on page load
-loadThresholds();
+const CAT_NAMES = ['Below Threshold', 'Category 1 — Moderate',
+    'Category 2 — High', 'Category 3 — Extreme', 'Category 4 — Exceptional'];
 
-// Enter key triggers lookup
-document.getElementById('zipInput').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') lookupZip();
-});
-
-function showStatus(msg, isError) {
-    const el = document.getElementById('statusMsg');
-    el.textContent = msg;
-    el.className = isError ? 'status-msg error' : 'status-msg';
-}
-
-// Number of threshold categories (read from data, default 3)
-let N_CATS = 3;
+function catName(cat) { return CAT_NAMES[cat] || `Category ${cat}`; }
+function catClass(cat) { return cat === 0 ? 'cat-none' : `cat-${cat}`; }
+function catColor(cat) { return CAT_COLORS[cat === 0 ? 'none' : cat]?.fill || '#666'; }
+function catShort(cat) { return cat === 0 ? 'OK' : `Cat ${cat}`; }
 
 function getCategory(temp, t) {
     for (let c = N_CATS; c >= 1; c--) {
@@ -419,322 +300,227 @@ function getCategory(temp, t) {
     return 0;
 }
 
-const CAT_NAMES = ['Below Threshold', 'Category 1 - Moderate',
-        'Category 2 - High', 'Category 3 - Extreme'];
-
-function catName(cat) {
-    return CAT_NAMES[cat] || `Category ${cat}`;
+function showStatus(msg, isError) {
+    const el = document.getElementById('statusMsg');
+    el.textContent = msg;
+    el.className = isError ? 'status-msg error' : 'status-msg';
 }
 
-function catClass(cat) {
-    return cat === 0 ? 'cat-none' : `cat-${cat}`;
-}
-
-async function lookupZip() {
-    const zip = document.getElementById('zipInput').value.trim();
-    if (!/^\d{5}$/.test(zip)) {
-        showStatus('Please enter a valid 5-digit ZIP code', true);
-        return;
-    }
-
-    if (!THRESHOLDS) {
-        showStatus('Threshold data not loaded yet. Please wait...', true);
-        return;
-    }
-
-    const t = THRESHOLDS[zip];
-    if (!t) {
-        showStatus(`ZIP ${zip} not found in California threshold data`, true);
-        return;
-    }
-
-    showStatus('Fetching weather data...', false);
-
-    // Show thresholds immediately
-    showThresholds(t);
-
-    // Fetch weather from NWS
+// ---- Data loading ----
+async function loadThresholds() {
     try {
-        const weather = await fetchNWSWeather(t.lat, t.lon);
-        const cat = getCategory(weather.current.temp, t);
-        showCurrentConditions(weather.current, t, zip);
-        showMap(t.lat, t.lon, zip, cat);
-        showForecast(weather.forecast, t);
-        showGauge(weather.current.temp, t);
-        showStatus('', false);
+        const resp = await fetch('zip_thresholds.json');
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        THRESHOLDS = await resp.json();
+        const firstZip = Object.values(THRESHOLDS)[0];
+        if (firstZip && firstZip.n_cats) N_CATS = firstZip.n_cats;
+        else { N_CATS = 0; while (firstZip[`cat${N_CATS + 1}`] != null) N_CATS++; }
+        currentMapCat = `cat${N_CATS}`;
+        console.log(`Loaded ${Object.keys(THRESHOLDS).length} ZIP thresholds (${N_CATS} categories)`);
     } catch (e) {
-        console.error('Weather fetch error:', e);
-        showStatus('Weather data unavailable. Showing thresholds only.', true);
-        showMap(t.lat, t.lon, zip, 0);
-        // Still show thresholds even without weather
-        document.getElementById('currentCard').style.display = 'none';
-        document.getElementById('forecast').style.display = 'none';
-        document.getElementById('gauge').style.display = 'none';
+        console.error('Failed to load thresholds:', e);
+        showStatus('Failed to load threshold data.', true);
     }
 }
 
-async function fetchNWSWeather(lat, lon) {
-    // Step 1: Get grid point
-    const pointResp = await fetch(
-        `https://api.weather.gov/points/${lat},${lon}`,
-        { headers: { 'User-Agent': 'CAHeatAlert/1.0 (OEHHA research prototype)' } }
-    );
-    if (!pointResp.ok) throw new Error(`NWS points: ${pointResp.status}`);
-    const pointData = await pointResp.json();
+// ---- Auto-start ----
+let hasAutoStarted = false;
+async function autoStart() {
+    if (hasAutoStarted || !THRESHOLDS) return;
+    hasAutoStarted = true;
+    document.getElementById('zipInput').value = DEFAULT_ZIP;
+    await lookupZip();
+}
 
-    // Step 2: Get forecast
-    const fcResp = await fetch(
-        pointData.properties.forecast,
-        { headers: { 'User-Agent': 'CAHeatAlert/1.0 (OEHHA research prototype)' } }
-    );
-    if (!fcResp.ok) throw new Error(`NWS forecast: ${fcResp.status}`);
-    const fcData = await fcResp.json();
-
-    // Parse periods — NWS gives day/night pairs
-    const periods = fcData.properties.periods;
-    const forecast = [];
-    let currentTemp = null;
-    let currentDesc = '';
-
-    for (const p of periods) {
-        const tempF = p.temperatureUnit === 'F' ? p.temperature :
-                      p.temperature * 9/5 + 32;
-
-        if (currentTemp === null) {
-            currentTemp = tempF;
-            currentDesc = p.shortForecast;
-        }
-
-        if (p.isDaytime) {
-            forecast.push({
-                name: p.name,
-                temp: tempF,
-                desc: p.shortForecast,
-            });
-        }
+// ---- Nearest neighbors ----
+function findNearestZIPs(zip, count) {
+    const origin = THRESHOLDS[zip];
+    if (!origin) return [];
+    const cosLat = Math.cos(origin.lat * Math.PI / 180);
+    const results = [];
+    for (const [z, t] of Object.entries(THRESHOLDS)) {
+        if (z === zip) continue;
+        const dlat = origin.lat - t.lat;
+        const dlon = (origin.lon - t.lon) * cosLat;
+        results.push({ zip: z, threshold: t, dist: dlat * dlat + dlon * dlon });
     }
+    results.sort((a, b) => a.dist - b.dist);
+    return results.slice(0, count);
+}
 
-    return {
-        current: { temp: currentTemp, desc: currentDesc },
-        forecast: forecast.slice(0, 7),
+// ---- Speedometer SVG ----
+function createSpeedometerSVG(threshold, currentTemp, radius, arcWidth, showLabels) {
+    const sweep = 270;
+    const lo = currentTemp != null
+        ? Math.min(threshold.cat1 - 5, currentTemp - 3)
+        : threshold.cat1 - 5;
+    const hi = currentTemp != null
+        ? Math.max(threshold[`cat${N_CATS}`] + 5, currentTemp + 3)
+        : threshold[`cat${N_CATS}`] + 5;
+    const range = hi - lo;
+    const pct = v => Math.max(0, Math.min(1, (v - lo) / range));
+
+    // SVG dimensions
+    const pad = showLabels ? 20 : 6;
+    const w = (radius + pad) * 2;
+    const tipDip = radius * Math.sin(Math.PI / 4);
+    const h = radius + pad + tipDip + (showLabels ? 8 : 4);
+    const cx = w / 2;
+    const cy = radius + pad;
+
+    // CG angle: fraction → radians (135° to 405° sweep, CG coords)
+    const cgAngle = frac => (135 + frac * sweep) * Math.PI / 180;
+
+    // Arc point
+    const arcPt = (frac, r) => {
+        const a = cgAngle(frac);
+        return { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) };
     };
+
+    // SVG arc path (large-arc flag needed when segment > 180°)
+    function arcPath(f1, f2, r) {
+        const p1 = arcPt(f1, r);
+        const p2 = arcPt(f2, r);
+        const angleDeg = (f2 - f1) * sweep;
+        const largeArc = angleDeg > 180 ? 1 : 0;
+        return `M ${p1.x} ${p1.y} A ${r} ${r} 0 ${largeArc} 1 ${p2.x} ${p2.y}`;
+    }
+
+    let svg = `<svg width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg">`;
+
+    // Category segments
+    const segments = [
+        { from: 0, to: pct(threshold.cat1), color: catColor(0) },
+    ];
+    for (let c = 1; c < N_CATS; c++) {
+        segments.push({
+            from: pct(threshold[`cat${c}`]),
+            to: pct(threshold[`cat${c + 1}`]),
+            color: catColor(c),
+        });
+    }
+    segments.push({
+        from: pct(threshold[`cat${N_CATS}`]),
+        to: 1,
+        color: catColor(N_CATS),
+    });
+
+    for (const seg of segments) {
+        if (seg.to <= seg.from) continue;
+        svg += `<path d="${arcPath(seg.from, seg.to, radius)}" fill="none" stroke="${seg.color}" stroke-width="${arcWidth}" stroke-linecap="butt"/>`;
+    }
+
+    // Tick marks and labels (only on full-size gauge)
+    if (showLabels) {
+        for (let c = 1; c <= N_CATS; c++) {
+            const frac = pct(threshold[`cat${c}`]);
+            const a = cgAngle(frac);
+            const innerR = radius - arcWidth / 2 - 2;
+            const outerR = radius + arcWidth / 2 + 2;
+            const p1 = { x: cx + innerR * Math.cos(a), y: cy + innerR * Math.sin(a) };
+            const p2 = { x: cx + outerR * Math.cos(a), y: cy + outerR * Math.sin(a) };
+            svg += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="rgba(255,255,255,0.9)" stroke-width="2"/>`;
+            const labelR = outerR + 12;
+            const lp = { x: cx + labelR * Math.cos(a), y: cy + labelR * Math.sin(a) };
+            svg += `<text x="${lp.x}" y="${lp.y}" text-anchor="middle" dominant-baseline="central" fill="rgba(255,255,255,0.8)" font-size="10" font-weight="600">${Math.round(threshold[`cat${c}`])}°</text>`;
+        }
+        // Endpoint labels
+        for (const [frac, val] of [[0, lo], [1, hi]]) {
+            const a = cgAngle(frac);
+            const labelR = radius + arcWidth / 2 + 12;
+            const lp = { x: cx + labelR * Math.cos(a), y: cy + labelR * Math.sin(a) };
+            svg += `<text x="${lp.x}" y="${lp.y}" text-anchor="middle" dominant-baseline="central" fill="rgba(255,255,255,0.4)" font-size="9">${Math.round(val)}°</text>`;
+        }
+    }
+
+    // Needle
+    if (currentTemp != null) {
+        const frac = pct(currentTemp);
+        const a = cgAngle(frac);
+        const needleR = radius - arcWidth / 2 - (showLabels ? 6 : 3);
+        const baseW = showLabels ? 5 : 3;
+        const perpA = a + Math.PI / 2;
+        const tip = { x: cx + needleR * Math.cos(a), y: cy + needleR * Math.sin(a) };
+        const b1 = { x: cx + baseW * Math.cos(perpA), y: cy + baseW * Math.sin(perpA) };
+        const b2 = { x: cx - baseW * Math.cos(perpA), y: cy - baseW * Math.sin(perpA) };
+        svg += `<polygon points="${tip.x},${tip.y} ${b1.x},${b1.y} ${b2.x},${b2.y}" fill="white" filter="url(#shadow)"/>`;
+        const capR = showLabels ? 7 : 4;
+        svg += `<circle cx="${cx}" cy="${cy}" r="${capR}" fill="white"/>`;
+        const dotR = showLabels ? 3 : 2;
+        svg += `<circle cx="${cx}" cy="${cy}" r="${dotR}" fill="#1a1a2e"/>`;
+    }
+
+    // Shadow filter
+    svg += `<defs><filter id="shadow"><feDropShadow dx="0" dy="1" stdDeviation="2" flood-opacity="0.5"/></filter></defs>`;
+    svg += '</svg>';
+    return svg;
 }
+
+// ---- Display functions ----
 
 function showCurrentConditions(current, t, zip) {
     const card = document.getElementById('currentCard');
     const cat = getCategory(current.temp, t);
-
     document.getElementById('currentTemp').textContent = `${Math.round(current.temp)}°F`;
     document.getElementById('currentCat').textContent = catName(cat);
-    document.getElementById('currentDesc').textContent =
-        `ZIP ${zip} — ${current.desc}`;
-
+    document.getElementById('currentDesc').textContent = `ZIP ${zip} — ${current.desc}`;
     card.className = `current-card ${catClass(cat)}`;
     card.style.display = 'block';
 }
 
 function showGauge(currentTemp, t) {
-    const gauge = document.getElementById('gauge');
-    const bar = document.getElementById('gaugeBar');
+    const section = document.getElementById('gaugeSection');
+    const svgContainer = document.getElementById('gaugeSvg');
+    const readout = document.getElementById('gaugeReadout');
 
-    // Gauge range: 70°F to max(top_cat+10, currentTemp+5)
-    const lo = 70;
-    const topCatTemp = t[`cat${N_CATS}`];
-    const hi = Math.max(topCatTemp + 10, (currentTemp || 0) + 5, 110);
-    const range = hi - lo;
+    svgContainer.innerHTML = createSpeedometerSVG(t, currentTemp, 95, 22, true);
 
-    const pct = (v) => Math.max(0, Math.min(100, (v - lo) / range * 100));
-
-    // Build segments dynamically
-    const segments = [
-        { end: t.cat1, cls: 'seg-none', label: `<${Math.round(t.cat1)}°` },
-    ];
-    for (let c = 1; c < N_CATS; c++) {
-        segments.push({ end: t[`cat${c+1}`], cls: `seg-${c}`, label: `Cat ${c}` });
+    if (currentTemp != null) {
+        const cat = getCategory(currentTemp, t);
+        readout.innerHTML = `<div class="temp">${Math.round(currentTemp)}°F</div>
+            <div class="cat-label" style="color:${catColor(cat)}">${catName(cat)}</div>`;
+    } else {
+        readout.innerHTML = `<div class="temp" style="color:#666">--°F</div>`;
     }
-    segments.push({ end: hi, cls: `seg-${N_CATS}`, label: `Cat ${N_CATS}` });
+    section.style.display = 'block';
+}
+
+function showNeighborGauges(zip, currentTemp) {
+    const section = document.getElementById('neighborSection');
+    const row = document.getElementById('neighborRow');
+
+    neighborZipList = findNearestZIPs(zip, 4);
+    if (neighborZipList.length === 0) { section.style.display = 'none'; return; }
 
     let html = '';
-    let prevEnd = lo;
-    for (const seg of segments) {
-        const w = pct(seg.end) - pct(prevEnd);
-        if (w > 0) {
-            html += `<div class="gauge-segment ${seg.cls}" style="width:${w}%">
-                ${w > 8 ? seg.label : ''}</div>`;
-        }
-        prevEnd = seg.end;
+    for (const n of neighborZipList) {
+        const cat = currentTemp != null ? getCategory(currentTemp, n.threshold) : 0;
+        html += `<div class="mini-gauge">
+            ${createSpeedometerSVG(n.threshold, currentTemp, 36, 8, false)}
+            <div class="zip-label">${n.zip}</div>
+            <div class="cat-label" style="color:${catColor(cat)}">${catShort(cat)}</div>
+        </div>`;
     }
-
-    // Current temp marker
-    if (currentTemp != null) {
-        const markerPct = pct(currentTemp);
-        html += `<div class="gauge-marker" style="left:${markerPct}%"></div>`;
-    }
-
-    bar.innerHTML = html;
-    gauge.style.display = 'block';
+    row.innerHTML = html;
+    section.style.display = 'block';
 }
 
 function showThresholds(t) {
     const container = document.getElementById('thresholdRows');
-    const cats = [];
+    let html = '';
     for (let c = 1; c <= N_CATS; c++) {
-        cats.push({
-            num: c, key: `cat${c}`, name: catName(c),
-            temp: t[`cat${c}`], lo: t[`ci_lo${c}`], hi: t[`ci_hi${c}`],
-        });
-    }
-
-    container.innerHTML = cats.map(c => {
-        const ciText = (c.lo != null && c.hi != null)
-            ? `<span class="cat-ci">(${c.lo.toFixed(1)}–${c.hi.toFixed(1)})</span>`
-            : '';
-        const active = c.key === currentMapCat ? ' map-active' : '';
-        return `<div class="threshold-row ${catClass(c.num)}${active}" data-cat="${c.key}"
-                     onclick="updateMapCategory('${c.key}')">
-            <span class="cat-name">${c.name}</span>
-            <span class="cat-temp">${c.temp.toFixed(1)}°F ${ciText}</span>
+        const active = `cat${c}` === currentMapCat ? ' map-active' : '';
+        const pin = `cat${c}` === currentMapCat ? '<span class="map-pin">📍</span>' : '';
+        const ciText = (t[`ci_lo${c}`] != null && t[`ci_hi${c}`] != null)
+            ? `<span class="cat-ci">(${t[`ci_lo${c}`].toFixed(1)}–${t[`ci_hi${c}`].toFixed(1)})</span>` : '';
+        html += `<div class="threshold-row ${catClass(c)}${active}" data-cat="cat${c}"
+                      onclick="updateMapCategory('cat${c}')">
+            <span class="cat-name">${pin}${catName(c)}</span>
+            <span class="cat-temp">${t[`cat${c}`].toFixed(1)}°F ${ciText}</span>
         </div>`;
-    }).join('');
-
+    }
+    container.innerHTML = html;
     document.getElementById('thresholds').style.display = 'block';
-}
-
-// ---- Map ----
-let map = null;
-let geoLayer = null;
-let zipPolygons = null;  // cached GeoJSON
-let selectedZip = null;
-let currentMapCat = `cat${N_CATS}`;  // default to highest category
-
-function getCatLabel(catKey) {
-    const n = parseInt(catKey.replace('cat', ''));
-    return catName(n);
-}
-
-// RdYlBu_r color scale matching ZIP threshold maps (blue->cream->red)
-// 11 stops sampled from chroma.scale(['#313695','#74add1','#ffffbf','#f46d43','#a50026'])
-const rdYlBuR = ['#313695','#4575b4','#74add1','#abd9e9','#e0f3f8',
-                 '#ffffbf','#fee090','#fdae61','#f46d43','#d73027','#a50026'];
-
-// Per-category breakpoints (will be recomputed from data once loaded)
-const colorScales = {
-    cat1: { breaks: [71, 74, 77, 80, 83, 86, 89, 92, 95, 98, 100] },
-    cat2: { breaks: [72, 75, 78, 81, 85, 88, 91, 94, 97, 100, 103] },
-    cat3: { breaks: [73, 77, 80, 84, 88, 92, 96, 100, 104, 108, 111] },
-};
-
-function thresholdColor(val) {
-    if (val == null) return '#999';
-    const scale = colorScales[currentMapCat];
-    for (let i = 0; i < scale.breaks.length; i++) {
-        if (val <= scale.breaks[i]) return rdYlBuR[i];
-    }
-    return rdYlBuR[rdYlBuR.length - 1];
-}
-
-function updateLegend() {
-    const scale = colorScales[currentMapCat];
-    // Show every other break for a compact legend
-    const picks = [0, 2, 4, 6, 8, 10];
-    const html = picks.map(i =>
-        `<div class="legend-item"><div class="legend-swatch" style="background:${rdYlBuR[i]}"></div>${Math.round(scale.breaks[i])}°F</div>`
-    ).join('');
-    document.getElementById('mapLegend').innerHTML = html;
-}
-
-function updateMapCategory(catKey) {
-    currentMapCat = catKey;
-    // Update title and legend
-    document.getElementById('mapTitle').textContent =
-        `${getCatLabel(catKey)} Threshold Map — Neighboring ZIPs`;
-    updateLegend();
-    // Re-style polygons
-    if (geoLayer) {
-        geoLayer.eachLayer(layer => {
-            const p = layer.feature.properties;
-            const isSelected = p.zip === selectedZip;
-            layer.setStyle({
-                fillColor: thresholdColor(p[catKey]),
-                fillOpacity: isSelected ? 0.9 : 0.7,
-                color: isSelected ? '#fff' : 'transparent',
-                weight: isSelected ? 3 : 0,
-            });
-            if (isSelected) layer.bringToFront();
-        });
-    }
-    // Highlight active row
-    document.querySelectorAll('.threshold-row').forEach(row => {
-        row.classList.toggle('map-active', row.dataset.cat === catKey);
-    });
-}
-
-async function loadPolygons() {
-    if (zipPolygons) return zipPolygons;
-    const resp = await fetch('zip_polygons.geojson');
-    if (!resp.ok) throw new Error(`GeoJSON: ${resp.status}`);
-    zipPolygons = await resp.json();
-    console.log(`Loaded ${zipPolygons.features.length} ZIP polygons`);
-    return zipPolygons;
-}
-
-function showMap(lat, lon, zip, cat) {
-    const container = document.getElementById('mapContainer');
-    container.style.display = 'block';
-    document.getElementById('mapTitle').textContent =
-        `${getCatLabel(currentMapCat)} Threshold Map — Neighboring ZIPs`;
-    updateLegend();
-
-    if (!map) {
-        map = L.map('map', { zoomControl: true, attributionControl: false });
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 18,
-            opacity: 0.4,
-        }).addTo(map);
-        L.control.attribution({ prefix: false })
-            .addAttribution('&copy; OpenStreetMap')
-            .addTo(map);
-    }
-
-    selectedZip = zip;
-    map.setView([lat, lon], 9);
-
-    // Load and render choropleth
-    loadPolygons().then(geojson => {
-        if (geoLayer) map.removeLayer(geoLayer);
-
-        geoLayer = L.geoJSON(geojson, {
-            style: function(feature) {
-                const isSelected = feature.properties.zip === zip;
-                return {
-                    fillColor: thresholdColor(feature.properties[currentMapCat]),
-                    fillOpacity: isSelected ? 0.9 : 0.7,
-                    color: isSelected ? '#fff' : 'transparent',
-                    weight: isSelected ? 3 : 0,
-                };
-            },
-            onEachFeature: function(feature, layer) {
-                const p = feature.properties;
-                const isSelected = p.zip === zip;
-                let popupLines = `<b>ZIP ${p.zip}</b>${isSelected ? ' (selected)' : ''}`;
-                for (let c = 1; c <= N_CATS; c++) {
-                    if (p[`cat${c}`] != null) popupLines += `<br>Cat ${c}: ${p[`cat${c}`]}°F`;
-                }
-                layer.bindPopup(popupLines, { closeButton: true, autoClose: true });
-            },
-        }).addTo(map);
-
-        // Bring selected ZIP to front
-        geoLayer.eachLayer(layer => {
-            if (layer.feature.properties.zip === zip) {
-                layer.bringToFront();
-            }
-        });
-
-        setTimeout(() => map.invalidateSize(), 100);
-    }).catch(err => {
-        console.error('Failed to load polygons:', err);
-    });
 }
 
 function showForecast(forecast, t) {
@@ -747,9 +533,224 @@ function showForecast(forecast, t) {
             <div class="day-cat">${cat > 0 ? 'Cat ' + cat : 'OK'}</div>
         </div>`;
     }).join('');
-
     document.getElementById('forecast').style.display = 'block';
 }
+
+// ---- NWS Weather ----
+async function fetchNWSWeather(lat, lon) {
+    const pointResp = await fetch(
+        `https://api.weather.gov/points/${lat},${lon}`,
+        { headers: { 'User-Agent': 'CAHeatAlert/1.0 (OEHHA research prototype)' } }
+    );
+    if (!pointResp.ok) throw new Error(`NWS points: ${pointResp.status}`);
+    const pointData = await pointResp.json();
+
+    const fcResp = await fetch(
+        pointData.properties.forecast,
+        { headers: { 'User-Agent': 'CAHeatAlert/1.0 (OEHHA research prototype)' } }
+    );
+    if (!fcResp.ok) throw new Error(`NWS forecast: ${fcResp.status}`);
+    const fcData = await fcResp.json();
+
+    const periods = fcData.properties.periods;
+    const forecast = [];
+    let currentTemp = null;
+    let currentDesc = '';
+
+    for (const p of periods) {
+        const tempF = p.temperatureUnit === 'F' ? p.temperature : p.temperature * 9 / 5 + 32;
+        if (currentTemp === null) { currentTemp = tempF; currentDesc = p.shortForecast; }
+        if (p.isDaytime) forecast.push({ name: p.name, temp: tempF, desc: p.shortForecast });
+    }
+
+    return { current: { temp: currentTemp, desc: currentDesc }, forecast: forecast.slice(0, 7) };
+}
+
+// ---- ZIP Lookup ----
+document.getElementById('zipInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') lookupZip();
+});
+
+async function lookupZip() {
+    const zip = document.getElementById('zipInput').value.trim();
+    if (!/^\d{5}$/.test(zip)) { showStatus('Please enter a valid 5-digit ZIP code', true); return; }
+    if (!THRESHOLDS) { showStatus('Threshold data not loaded yet.', true); return; }
+
+    const t = THRESHOLDS[zip];
+    if (!t) { showStatus(`ZIP ${zip} not found in California threshold data`, true); return; }
+
+    showStatus('Fetching weather data...', false);
+    showThresholds(t);
+
+    try {
+        const weather = await fetchNWSWeather(t.lat, t.lon);
+        showCurrentConditions(weather.current, t, zip);
+        showGauge(weather.current.temp, t);
+        showNeighborGauges(zip, weather.current.temp);
+        showForecast(weather.forecast, t);
+        showMap(t.lat, t.lon, zip);
+        showStatus('', false);
+    } catch (e) {
+        console.error('Weather fetch error:', e);
+        showStatus('Weather unavailable. Showing thresholds only.', true);
+        showGauge(null, t);
+        showNeighborGauges(zip, null);
+        showMap(t.lat, t.lon, zip);
+        document.getElementById('currentCard').style.display = 'none';
+        document.getElementById('forecast').style.display = 'none';
+    }
+}
+
+// ---- Map ----
+const SELECTED_COLOR = '#33cc59';  // Green
+const NEIGHBOR_COLOR = '#4090f4';  // Blue
+
+const rdYlBuR = ['#313695','#4575b4','#74add1','#abd9e9','#e0f3f8',
+                 '#ffffbf','#fee090','#fdae61','#f46d43','#d73027','#a50026'];
+const colorScales = {
+    cat1: { breaks: [71, 74, 77, 80, 83, 86, 89, 92, 95, 98, 100] },
+    cat2: { breaks: [72, 75, 78, 81, 85, 88, 91, 94, 97, 100, 103] },
+    cat3: { breaks: [73, 77, 80, 84, 88, 92, 96, 100, 104, 108, 111] },
+    cat4: { breaks: [74, 78, 82, 86, 90, 94, 98, 102, 106, 110, 114] },
+};
+
+function thresholdColor(val) {
+    if (val == null) return '#999';
+    const scale = colorScales[currentMapCat];
+    if (!scale) return '#999';
+    for (let i = 0; i < scale.breaks.length; i++) {
+        if (val <= scale.breaks[i]) return rdYlBuR[i];
+    }
+    return rdYlBuR[rdYlBuR.length - 1];
+}
+
+function updateLegend() {
+    const scale = colorScales[currentMapCat];
+    if (!scale) return;
+    const picks = [0, 2, 4, 6, 8, 10];
+    document.getElementById('mapLegend').innerHTML = picks.map(i =>
+        `<div class="legend-item"><div class="legend-swatch" style="background:${rdYlBuR[i]}"></div>${Math.round(scale.breaks[i])}°F</div>`
+    ).join('');
+}
+
+function getCatLabel(catKey) {
+    const n = parseInt(catKey.replace('cat', ''));
+    return catName(n);
+}
+
+function getPolygonStyle(feature) {
+    const p = feature.properties;
+    const isSelected = p.zip === selectedZip;
+    const neighborSet = new Set(neighborZipList.map(n => n.zip));
+    const isNeighbor = neighborSet.has(p.zip);
+
+    if (isSelected) {
+        return { fillColor: SELECTED_COLOR, fillOpacity: 0.85, color: SELECTED_COLOR, weight: 3 };
+    } else if (isNeighbor) {
+        return { fillColor: NEIGHBOR_COLOR, fillOpacity: 0.75, color: NEIGHBOR_COLOR, weight: 2 };
+    } else {
+        return {
+            fillColor: thresholdColor(p[currentMapCat]),
+            fillOpacity: 0.7, color: 'transparent', weight: 0,
+        };
+    }
+}
+
+function updateMapCategory(catKey) {
+    currentMapCat = catKey;
+    document.getElementById('mapTitle').textContent = `${getCatLabel(catKey)} Threshold Map`;
+    updateLegend();
+
+    if (geoLayer) {
+        geoLayer.eachLayer(layer => {
+            layer.setStyle(getPolygonStyle(layer.feature));
+            if (layer.feature.properties.zip === selectedZip) layer.bringToFront();
+        });
+    }
+
+    // Update row highlights
+    document.querySelectorAll('.threshold-row').forEach(row => {
+        const isActive = row.dataset.cat === catKey;
+        row.classList.toggle('map-active', isActive);
+        const nameSpan = row.querySelector('.cat-name');
+        const pin = isActive ? '📍' : '';
+        nameSpan.innerHTML = (pin ? `<span class="map-pin">${pin}</span>` : '') +
+            catName(parseInt(catKey.replace('cat', '')));
+    });
+
+    // Scroll to map
+    document.getElementById('mapContainer').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function rezoomMap() {
+    if (map && mapCenter) {
+        map.setView(mapCenter, 9);
+    }
+}
+
+async function loadPolygons() {
+    if (zipPolygons) return zipPolygons;
+    const resp = await fetch('zip_polygons.geojson');
+    if (!resp.ok) throw new Error(`GeoJSON: ${resp.status}`);
+    zipPolygons = await resp.json();
+    return zipPolygons;
+}
+
+function showMap(lat, lon, zip) {
+    const container = document.getElementById('mapContainer');
+    container.style.display = 'block';
+    document.getElementById('mapTitle').textContent = `${getCatLabel(currentMapCat)} Threshold Map`;
+    updateLegend();
+    mapCenter = [lat, lon];
+
+    if (!map) {
+        map = L.map('map', { zoomControl: true, attributionControl: false });
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18, opacity: 0.4,
+        }).addTo(map);
+        L.control.attribution({ prefix: false }).addAttribution('&copy; OpenStreetMap').addTo(map);
+    }
+
+    selectedZip = zip;
+    map.setView([lat, lon], 9);
+
+    loadPolygons().then(geojson => {
+        if (geoLayer) map.removeLayer(geoLayer);
+
+        geoLayer = L.geoJSON(geojson, {
+            style: getPolygonStyle,
+            onEachFeature: function(feature, layer) {
+                const p = feature.properties;
+                const isSelected = p.zip === zip;
+                const neighborSet = new Set(neighborZipList.map(n => n.zip));
+                const isNeighbor = neighborSet.has(p.zip);
+                let label = `<b>ZIP ${p.zip}</b>`;
+                if (isSelected) label += ' (selected)';
+                else if (isNeighbor) label += ' (neighbor)';
+                for (let c = 1; c <= N_CATS; c++) {
+                    if (p[`cat${c}`] != null) label += `<br>Cat ${c}: ${p[`cat${c}`]}°F`;
+                }
+                layer.bindPopup(label, { closeButton: true, autoClose: true });
+            },
+        }).addTo(map);
+
+        // Bring selected + neighbors to front
+        geoLayer.eachLayer(layer => {
+            const neighborSet = new Set(neighborZipList.map(n => n.zip));
+            if (neighborSet.has(layer.feature.properties.zip)) layer.bringToFront();
+        });
+        geoLayer.eachLayer(layer => {
+            if (layer.feature.properties.zip === zip) layer.bringToFront();
+        });
+
+        setTimeout(() => map.invalidateSize(), 100);
+    }).catch(err => console.error('Failed to load polygons:', err));
+}
+
+// ---- Init ----
+loadThresholds().then(() => {
+    if (sessionStorage.getItem('pw_ok') === '1') autoStart();
+});
 </script>
 
 </body>
