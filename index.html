@@ -95,10 +95,10 @@ body {
 
 /* Neighbor gauges */
 .neighbor-section {
-    width: 90%; max-width: 400px; margin: 10px auto; display: none;
+    width: 90%; max-width: 500px; margin: 10px auto; display: none;
 }
 .neighbor-section h3 { font-size: 0.9em; color: #aaa; margin-bottom: 10px; text-align: center; }
-.neighbor-row { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+.neighbor-row { display: flex; justify-content: center; gap: 12px; flex-wrap: nowrap; }
 .mini-gauge { text-align: center; }
 .mini-gauge .zip-label { font-size: 0.75em; font-weight: 600; color: rgba(255,255,255,0.8); font-family: monospace; margin-top: 4px; }
 .mini-gauge .cat-label { font-size: 0.7em; font-weight: 500; margin-top: 2px; }
@@ -361,7 +361,7 @@ function createSpeedometerSVG(threshold, currentTemp, radius, arcWidth, showLabe
     const pct = v => Math.max(0, Math.min(1, (v - lo) / range));
 
     // SVG dimensions
-    const pad = showLabels ? 20 : 6;
+    const pad = showLabels ? 40 : 6;
     const w = (radius + pad) * 2;
     const tipDip = radius * Math.sin(Math.PI / 4);
     const h = radius + pad + tipDip + (showLabels ? 8 : 4);
