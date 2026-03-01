@@ -605,10 +605,8 @@ async function lookupZip() {
 const SELECTED_COLOR = '#33cc59';  // Green
 const NEIGHBOR_COLOR = '#4090f4';  // Blue
 
-// Warm palette: dark red (low threshold, vulnerable) → cream (high threshold)
-// Avoids blues that blend with ocean on the basemap
-const mapColors = ['#800026','#a00026','#bd0026','#e31a1c','#fc4e2a',
-                   '#fd8d3c','#feb24c','#fed976','#ffeda0','#ffffcc','#fffff0'];
+const rdYlBuR = ['#313695','#4575b4','#74add1','#abd9e9','#e0f3f8',
+                 '#ffffbf','#fee090','#fdae61','#f46d43','#d73027','#a50026'];
 const colorScales = {
     cat1: { breaks: [71, 74, 77, 80, 83, 86, 89, 92, 95, 98, 100] },
     cat2: { breaks: [72, 75, 78, 81, 85, 88, 91, 94, 97, 100, 103] },
@@ -621,9 +619,9 @@ function thresholdColor(val) {
     const scale = colorScales[currentMapCat];
     if (!scale) return '#999';
     for (let i = 0; i < scale.breaks.length; i++) {
-        if (val <= scale.breaks[i]) return mapColors[i];
+        if (val <= scale.breaks[i]) return rdYlBuR[i];
     }
-    return mapColors[mapColors.length - 1];
+    return rdYlBuR[rdYlBuR.length - 1];
 }
 
 function updateLegend() {
@@ -631,7 +629,7 @@ function updateLegend() {
     if (!scale) return;
     const picks = [0, 2, 4, 6, 8, 10];
     document.getElementById('mapLegend').innerHTML = picks.map(i =>
-        `<div class="legend-item"><div class="legend-swatch" style="background:${mapColors[i]}"></div>${Math.round(scale.breaks[i])}°F</div>`
+        `<div class="legend-item"><div class="legend-swatch" style="background:${rdYlBuR[i]}"></div>${Math.round(scale.breaks[i])}°F</div>`
     ).join('');
 }
 
