@@ -607,29 +607,21 @@ const NEIGHBOR_COLOR = '#4090f4';  // Blue
 
 const rdYlBuR = ['#800026','#a00026','#bd0026','#e31a1c','#fc4e2a',
                  '#fd8d3c','#feb24c','#fed976','#ffeda0','#ffffcc','#fffff0'];
-const colorScales = {
-    cat1: { breaks: [71, 74, 77, 80, 83, 86, 89, 92, 95, 98, 100] },
-    cat2: { breaks: [72, 75, 78, 81, 85, 88, 91, 94, 97, 100, 103] },
-    cat3: { breaks: [73, 77, 80, 84, 88, 92, 96, 100, 104, 108, 111] },
-    cat4: { breaks: [74, 78, 82, 86, 90, 94, 98, 102, 106, 110, 114] },
-};
+// Unified breakpoints across all categories (71–114°F)
+const colorBreaks = [71, 75, 79, 83, 88, 92, 96, 100, 105, 110, 114];
 
 function thresholdColor(val) {
     if (val == null) return '#999';
-    const scale = colorScales[currentMapCat];
-    if (!scale) return '#999';
-    for (let i = 0; i < scale.breaks.length; i++) {
-        if (val <= scale.breaks[i]) return rdYlBuR[i];
+    for (let i = 0; i < colorBreaks.length; i++) {
+        if (val <= colorBreaks[i]) return rdYlBuR[i];
     }
     return rdYlBuR[rdYlBuR.length - 1];
 }
 
 function updateLegend() {
-    const scale = colorScales[currentMapCat];
-    if (!scale) return;
     const picks = [0, 2, 4, 6, 8, 10];
     document.getElementById('mapLegend').innerHTML = picks.map(i =>
-        `<div class="legend-item"><div class="legend-swatch" style="background:${rdYlBuR[i]}"></div>${Math.round(scale.breaks[i])}°F</div>`
+        `<div class="legend-item"><div class="legend-swatch" style="background:${rdYlBuR[i]}"></div>${Math.round(colorBreaks[i])}°F</div>`
     ).join('');
 }
 
