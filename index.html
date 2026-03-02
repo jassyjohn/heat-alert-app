@@ -675,7 +675,7 @@ function updateMapCategory(catKey) {
         const nameSpan = row.querySelector('.cat-name');
         const pin = isActive ? '📍' : '';
         nameSpan.innerHTML = (pin ? `<span class="map-pin">${pin}</span>` : '') +
-            catName(parseInt(catKey.replace('cat', '')));
+            catName(parseInt(row.dataset.cat.replace('cat', '')));
     });
 
     // Scroll to map
