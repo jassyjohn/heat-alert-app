@@ -92,6 +92,8 @@ body {
 .gauge-readout { text-align: center; margin-top: 4px; }
 .gauge-readout .temp { font-size: 2.2em; font-weight: 700; color: #fff; }
 .gauge-readout .cat-label { font-size: 0.85em; font-weight: 500; margin-top: 2px; }
+.baseline-display { text-align: center; margin-top: 10px; font-size: 0.9em; color: #aaa; }
+.baseline-display .baseline-temp { font-weight: 600; color: #40916c; font-size: 1.1em; }
 
 /* Neighbor gauges */
 .neighbor-section {
@@ -109,16 +111,11 @@ body {
 }
 .thresholds h3 { font-size: 0.9em; color: #aaa; margin-bottom: 10px; text-align: center; }
 .threshold-row {
-    display: flex; justify-content: space-between; align-items: center;
+    display: flex; justify-content: center; align-items: center;
     padding: 10px 16px; margin: 4px 0; border-radius: 10px;
-    font-size: 0.95em; cursor: pointer; transition: all 0.15s;
+    font-size: 0.95em;
 }
-.threshold-row:hover { outline: 2px solid rgba(255,255,255,0.5); }
-.threshold-row.map-active { outline: 3px solid #fff; transform: scale(1.02); }
 .threshold-row .cat-name { font-weight: 600; }
-.threshold-row .map-pin { margin-right: 6px; font-size: 0.85em; }
-.threshold-row .cat-temp { font-weight: 500; opacity: 0.9; }
-.threshold-row .cat-ci { font-size: 0.75em; opacity: 0.65; font-weight: 400; }
 
 /* Forecast */
 .forecast {
@@ -194,27 +191,22 @@ body {
     <h3>Your ZIP's Heat Thresholds</h3>
     <div class="gauge-svg-container" id="gaugeSvg"></div>
     <div class="gauge-readout" id="gaugeReadout"></div>
+    <div class="baseline-display" id="baselineDisplay"></div>
 </div>
 
-<!-- Neighbor mini gauges -->
-<div id="neighborSection" class="neighbor-section">
-    <h3>Nearby ZIPs</h3>
-    <div class="neighbor-row" id="neighborRow"></div>
-</div>
-
-<!-- Threshold details -->
-<div id="thresholds" class="thresholds">
-    <h3>Threshold Details &mdash; tap to view on map</h3>
-    <div id="thresholdRows"></div>
-</div>
-
-<!-- Forecast -->
+<!-- Forecast (moved up: below gauge) -->
 <div id="forecast" class="forecast">
     <h3>7-Day Forecast</h3>
     <div class="forecast-grid" id="forecastGrid"></div>
 </div>
 
-<!-- Map (at the bottom) -->
+<!-- Threshold details -->
+<div id="thresholds" class="thresholds">
+    <h3>Risk Levels</h3>
+    <div id="thresholdRows"></div>
+</div>
+
+<!-- Map -->
 <div id="mapContainer" class="map-container">
     <h3 id="mapTitle">Threshold Map</h3>
     <div class="map-wrapper">
@@ -222,6 +214,12 @@ body {
         <div id="map"></div>
     </div>
     <div class="map-legend" id="mapLegend"></div>
+</div>
+
+<!-- Neighbor mini gauges (moved down: below map) -->
+<div id="neighborSection" class="neighbor-section">
+    <h3>Nearby ZIPs</h3>
+    <div class="neighbor-row" id="neighborRow"></div>
 </div>
 
 <div class="footer">
@@ -285,13 +283,14 @@ const CAT_COLORS = {
     4:    { fill: '#a3001e', gradient: ['#800020', '#a3001e'] },
 };
 
-const CAT_NAMES = ['Below Threshold', 'Category 1 — Moderate',
-    'Category 2 — High', 'Category 3 — Extreme', 'Category 4 — Exceptional'];
+const CAT_NAMES = ['Safe', 'Moderate Risk',
+    'High Risk', 'Extreme Risk', 'Exceptional Risk'];
 
 function catName(cat) { return CAT_NAMES[cat] || `Category ${cat}`; }
 function catClass(cat) { return cat === 0 ? 'cat-none' : `cat-${cat}`; }
 function catColor(cat) { return CAT_COLORS[cat === 0 ? 'none' : cat]?.fill || '#666'; }
-function catShort(cat) { return cat === 0 ? 'OK' : `Cat ${cat}`; }
+const CAT_SHORT = ['Safe', 'Moderate', 'High', 'Extreme', 'Exceptional'];
+function catShort(cat) { return CAT_SHORT[cat] || `Level ${cat}`; }
 
 function getCategory(temp, t) {
     for (let c = N_CATS; c >= 1; c--) {
@@ -433,6 +432,22 @@ function createSpeedometerSVG(threshold, currentTemp, radius, arcWidth, showLabe
         }
     }
 
+    // Baseline (normal) tick mark — full-size gauge only
+    if (showLabels && threshold.baseline_temp != null) {
+        const blFrac = pct(threshold.baseline_temp);
+        if (blFrac > 0 && blFrac < 1) {
+            const blA = cgAngle(blFrac);
+            const blInner = radius - arcWidth / 2 - 6;
+            const blOuter = radius + arcWidth / 2 + 6;
+            const bl1 = { x: cx + blInner * Math.cos(blA), y: cy + blInner * Math.sin(blA) };
+            const bl2 = { x: cx + blOuter * Math.cos(blA), y: cy + blOuter * Math.sin(blA) };
+            svg += `<line x1="${bl1.x}" y1="${bl1.y}" x2="${bl2.x}" y2="${bl2.y}" stroke="white" stroke-width="2.5" stroke-dasharray="3,2"/>`;
+            const blLabelR = blOuter + 14;
+            const blLp = { x: cx + blLabelR * Math.cos(blA), y: cy + blLabelR * Math.sin(blA) };
+            svg += `<text x="${blLp.x}" y="${blLp.y}" text-anchor="middle" dominant-baseline="central" fill="white" font-size="8" font-weight="400">normal</text>`;
+        }
+    }
+
     // Needle
     if (currentTemp != null) {
         const frac = pct(currentTemp);
@@ -472,6 +487,7 @@ function showGauge(currentTemp, t) {
     const section = document.getElementById('gaugeSection');
     const svgContainer = document.getElementById('gaugeSvg');
     const readout = document.getElementById('gaugeReadout');
+    const baselineEl = document.getElementById('baselineDisplay');
 
     svgContainer.innerHTML = createSpeedometerSVG(t, currentTemp, 95, 22, true);
 
@@ -481,6 +497,13 @@ function showGauge(currentTemp, t) {
             <div class="cat-label" style="color:${catColor(cat)}">${catName(cat)}</div>`;
     } else {
         readout.innerHTML = `<div class="temp" style="color:#666">--°F</div>`;
+    }
+
+    // Baseline (normal) temperature
+    if (t.baseline_temp != null) {
+        baselineEl.innerHTML = `Baseline (normal): <span class="baseline-temp">${Math.round(t.baseline_temp)}°F</span>`;
+    } else {
+        baselineEl.innerHTML = '';
     }
     section.style.display = 'block';
 }
@@ -492,10 +515,18 @@ function showNeighborGauges(zip, currentTemp) {
     neighborZipList = findNearestZIPs(zip, 4);
     if (neighborZipList.length === 0) { section.style.display = 'none'; return; }
 
-    let html = '';
+    // "Home" mini gauge for the selected ZIP (clicking returns to it)
+    const homeT = THRESHOLDS[zip];
+    const homeCat = currentTemp != null ? getCategory(currentTemp, homeT) : 0;
+    let html = `<div class="mini-gauge" onclick="rezoomMap()" style="cursor:pointer; border-right: 2px solid #444; padding-right: 12px; margin-right: 4px;">
+        ${createSpeedometerSVG(homeT, currentTemp, 36, 8, false)}
+        <div class="zip-label" style="color:${SELECTED_COLOR}">${zip}</div>
+        <div class="cat-label" style="color:${catColor(homeCat)}">${catShort(homeCat)}</div>
+    </div>`;
+
     for (const n of neighborZipList) {
         const cat = currentTemp != null ? getCategory(currentTemp, n.threshold) : 0;
-        html += `<div class="mini-gauge">
+        html += `<div class="mini-gauge" onclick="zoomToZip('${n.zip}')" style="cursor:pointer">
             ${createSpeedometerSVG(n.threshold, currentTemp, 36, 8, false)}
             <div class="zip-label">${n.zip}</div>
             <div class="cat-label" style="color:${catColor(cat)}">${catShort(cat)}</div>
@@ -507,16 +538,12 @@ function showNeighborGauges(zip, currentTemp) {
 
 function showThresholds(t) {
     const container = document.getElementById('thresholdRows');
-    let html = '';
+    let html = `<div class="threshold-row cat-none" data-cat="cat0">
+            <span class="cat-name">${catName(0)}</span>
+        </div>`;
     for (let c = 1; c <= N_CATS; c++) {
-        const active = `cat${c}` === currentMapCat ? ' map-active' : '';
-        const pin = `cat${c}` === currentMapCat ? '<span class="map-pin">📍</span>' : '';
-        const ciText = (t[`ci_lo${c}`] != null && t[`ci_hi${c}`] != null)
-            ? `<span class="cat-ci">(${t[`ci_lo${c}`].toFixed(1)}–${t[`ci_hi${c}`].toFixed(1)})</span>` : '';
-        html += `<div class="threshold-row ${catClass(c)}${active}" data-cat="cat${c}"
-                      onclick="updateMapCategory('cat${c}')">
-            <span class="cat-name">${pin}${catName(c)}</span>
-            <span class="cat-temp">${t[`cat${c}`].toFixed(1)}°F ${ciText}</span>
+        html += `<div class="threshold-row ${catClass(c)}" data-cat="cat${c}">
+            <span class="cat-name">${catName(c)}</span>
         </div>`;
     }
     container.innerHTML = html;
@@ -530,7 +557,7 @@ function showForecast(forecast, t) {
         return `<div class="forecast-day ${catClass(cat)}">
             <div class="day-name">${day.name}</div>
             <div class="day-temp">${Math.round(day.temp)}°</div>
-            <div class="day-cat">${cat > 0 ? 'Cat ' + cat : 'OK'}</div>
+            <div class="day-cat">${catShort(cat)}</div>
         </div>`;
     }).join('');
     document.getElementById('forecast').style.display = 'block';
@@ -579,11 +606,15 @@ async function lookupZip() {
     const t = THRESHOLDS[zip];
     if (!t) { showStatus(`ZIP ${zip} not found in California threshold data`, true); return; }
 
+    highlightedNeighborZip = null;
     showStatus('Fetching weather data...', false);
     showThresholds(t);
 
     try {
         const weather = await fetchNWSWeather(t.lat, t.lon);
+        // Set map to show current weather's category
+        const currentCat = getCategory(weather.current.temp, t);
+        currentMapCat = currentCat > 0 ? `cat${currentCat}` : `cat${N_CATS}`;
         showCurrentConditions(weather.current, t, zip);
         showGauge(weather.current.temp, t);
         showNeighborGauges(zip, weather.current.temp);
@@ -602,8 +633,7 @@ async function lookupZip() {
 }
 
 // ---- Map ----
-const SELECTED_COLOR = '#33cc59';  // Green
-const NEIGHBOR_COLOR = '#4090f4';  // Blue
+const SELECTED_COLOR = '#33cc59';  // Green outline for selected ZIP
 
 const rdYlBuR = ['#800026','#a00026','#bd0026','#e31a1c','#fc4e2a',
                  '#fd8d3c','#feb24c','#fed976','#ffeda0','#ffffcc','#fffff0'];
@@ -625,21 +655,17 @@ function updateLegend() {
     ).join('');
 }
 
-function getCatLabel(catKey) {
-    const n = parseInt(catKey.replace('cat', ''));
-    return catName(n);
-}
-
 function getPolygonStyle(feature) {
     const p = feature.properties;
     const isSelected = p.zip === selectedZip;
-    const neighborSet = new Set(neighborZipList.map(n => n.zip));
-    const isNeighbor = neighborSet.has(p.zip);
+    const isHighlightedNeighbor = p.zip === highlightedNeighborZip;
 
     if (isSelected) {
-        return { fillColor: SELECTED_COLOR, fillOpacity: 0.85, color: SELECTED_COLOR, weight: 3 };
-    } else if (isNeighbor) {
-        return { fillColor: NEIGHBOR_COLOR, fillOpacity: 0.75, color: NEIGHBOR_COLOR, weight: 2 };
+        // Outline only (no fill) in green
+        return { fillColor: 'transparent', fillOpacity: 0, color: SELECTED_COLOR, weight: 3 };
+    } else if (isHighlightedNeighbor) {
+        // Outline only in blue for clicked neighbor
+        return { fillColor: 'transparent', fillOpacity: 0, color: '#4090f4', weight: 3 };
     } else {
         return {
             fillColor: thresholdColor(p[currentMapCat]),
@@ -648,36 +674,44 @@ function getPolygonStyle(feature) {
     }
 }
 
-function updateMapCategory(catKey) {
-    currentMapCat = catKey;
-    document.getElementById('mapTitle').textContent = `${getCatLabel(catKey)} Threshold Map`;
-    updateLegend();
+// Map shows current category only — no category switching from buttons
 
-    if (geoLayer) {
-        geoLayer.eachLayer(layer => {
-            layer.setStyle(getPolygonStyle(layer.feature));
-            if (layer.feature.properties.zip === selectedZip) layer.bringToFront();
-        });
-    }
+let highlightedNeighborZip = null;
 
-    // Update row highlights
-    document.querySelectorAll('.threshold-row').forEach(row => {
-        const isActive = row.dataset.cat === catKey;
-        row.classList.toggle('map-active', isActive);
-        const nameSpan = row.querySelector('.cat-name');
-        const pin = isActive ? '📍' : '';
-        nameSpan.innerHTML = (pin ? `<span class="map-pin">${pin}</span>` : '') +
-            catName(parseInt(row.dataset.cat.replace('cat', '')));
+function zoomToZip(zip) {
+    if (!geoLayer || !map) return;
+    highlightedNeighborZip = zip;
+    // Re-style all polygons (removes previous neighbor highlight)
+    geoLayer.eachLayer(layer => {
+        layer.setStyle(getPolygonStyle(layer.feature));
     });
-
+    // Find and zoom to the clicked ZIP
+    geoLayer.eachLayer(layer => {
+        if (layer.feature.properties.zip === zip) {
+            layer.bringToFront();
+            map.fitBounds(layer.getBounds().pad(3.0));
+        }
+    });
+    // Also bring selected ZIP to front
+    geoLayer.eachLayer(layer => {
+        if (layer.feature.properties.zip === selectedZip) layer.bringToFront();
+    });
     // Scroll to map
     document.getElementById('mapContainer').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function rezoomMap() {
-    if (map && mapCenter) {
-        map.setView(mapCenter, 9);
-    }
+    if (!geoLayer || !map || !selectedZip) return;
+    highlightedNeighborZip = null;
+    geoLayer.eachLayer(layer => {
+        layer.setStyle(getPolygonStyle(layer.feature));
+    });
+    geoLayer.eachLayer(layer => {
+        if (layer.feature.properties.zip === selectedZip) {
+            layer.bringToFront();
+            map.fitBounds(layer.getBounds().pad(3.0));
+        }
+    });
 }
 
 async function loadPolygons() {
@@ -691,7 +725,7 @@ async function loadPolygons() {
 function showMap(lat, lon, zip) {
     const container = document.getElementById('mapContainer');
     container.style.display = 'block';
-    document.getElementById('mapTitle').textContent = `${getCatLabel(currentMapCat)} Threshold Map`;
+    document.getElementById('mapTitle').textContent = 'Current Risk Map';
     updateLegend();
     mapCenter = [lat, lon];
 
@@ -714,25 +748,21 @@ function showMap(lat, lon, zip) {
             onEachFeature: function(feature, layer) {
                 const p = feature.properties;
                 const isSelected = p.zip === zip;
-                const neighborSet = new Set(neighborZipList.map(n => n.zip));
-                const isNeighbor = neighborSet.has(p.zip);
                 let label = `<b>ZIP ${p.zip}</b>`;
                 if (isSelected) label += ' (selected)';
-                else if (isNeighbor) label += ' (neighbor)';
                 for (let c = 1; c <= N_CATS; c++) {
-                    if (p[`cat${c}`] != null) label += `<br>Cat ${c}: ${p[`cat${c}`]}°F`;
+                    if (p[`cat${c}`] != null) label += `<br>${catName(c)}: ${p[`cat${c}`]}°F`;
                 }
                 layer.bindPopup(label, { closeButton: true, autoClose: true });
             },
         }).addTo(map);
 
-        // Bring selected + neighbors to front
+        // Bring selected ZIP to front and zoom to it
         geoLayer.eachLayer(layer => {
-            const neighborSet = new Set(neighborZipList.map(n => n.zip));
-            if (neighborSet.has(layer.feature.properties.zip)) layer.bringToFront();
-        });
-        geoLayer.eachLayer(layer => {
-            if (layer.feature.properties.zip === zip) layer.bringToFront();
+            if (layer.feature.properties.zip === zip) {
+                layer.bringToFront();
+                map.fitBounds(layer.getBounds().pad(3.0));
+            }
         });
 
         setTimeout(() => map.invalidateSize(), 100);
